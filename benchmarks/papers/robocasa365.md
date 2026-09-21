@@ -1,1371 +1,1211 @@
-PublishedasaconferencepaperatICLR2026
-| ROBOCASA365: |     |        | A   | LARGE-SCALE |     |     | SIMULATION   |     |     |     |
-| ------------ | --- | ------ | --- | ----------- | --- | --- | ------------ | --- | --- | --- |
-| FRAMEWORK    |     |        |     | TRAINING    |     |     | BENCHMARKING |     |     |     |
-|              |     |        | FOR |             |     |     | AND          |     |     |     |
-| GENERALIST   |     | ROBOTS |     |             |     |     |              |     |     |     |
-SoroushNasiriany1,∗,SepehrNasiriany1,∗,AbhiramMaddukuri1,∗,YukeZhu1,2
-1TheUniversityofTexasatAustin,2NVIDIAResearch;∗Equalcontribution
-https://robocasa.ai
-ABSTRACT
-|     | Recent                                     | advances    | in robot | learning | have  | accelerated | progress                    | toward | generalist     |     |
-| --- | ------------------------------------------ | ----------- | -------- | -------- | ----- | ----------- | --------------------------- | ------ | -------------- | --- |
-|     | robots that                                | can perform | everyday |          | tasks | in human    | environments.               |        | Yet it remains |     |
-|     | difficulttogaugehowclosewearetothisvision. |             |          |          |       |             | Thefieldlacksareproducible, |        |                |     |
-large-scalebenchmarkforsystematicevaluation.Tofillthisgap,wepresentRobo-
-|     | Casa365,      | acomprehensivesimulationbenchmarkforhouseholdmobilemanipu- |          |           |               |                  |            |           |              |       |
-| --- | ------------- | ---------------------------------------------------------- | -------- | --------- | ------------- | ---------------- | ---------- | --------- | ------------ | ----- |
-|     | lation. Built | on the                                                     | RoboCasa | platform, |               | RoboCasa365      | introduces |           | 365 everyday |       |
-|     | tasks across  | 2,500                                                      | diverse  | kitchen   | environments, |                  | with over  | 600 hours | of           | human |
-|     | demonstration | data                                                       | and over | 1600      | hours         | of synthetically | generated  |           | demonstra-   |       |
-tiondata—makingitoneofthemostdiverseandlarge-scaleresourcesforstudy-
-|     | ing generalist                         | policies. | RoboCasa365 |           | is        | designed                        | to support | systematic | evalua-       |     |
-| --- | -------------------------------------- | --------- | ----------- | --------- | --------- | ------------------------------- | ---------- | ---------- | ------------- | --- |
-|     | tions for                              | different | problem     | settings, | including | multi-task                      | learning,  |            | robot founda- |     |
-|     | tionmodeltraining,andlifelonglearning. |           |             |           |           | Weconductextensiveexperimentson |            |            |               |     |
-thisbenchmarkwithstate-of-the-artmethodsandanalyzetheimpactsoftaskdi-
-|     | versity, | dataset scale, | and  | environment | variation    |          | on generalization. |                 | Our | results |
-| --- | -------- | -------------- | ---- | ----------- | ------------ | -------- | ------------------ | --------------- | --- | ------- |
-|     | provide  | new insights   | into | what        | factors most | strongly | affect             | the performance |     | of      |
-generalistrobotsandinformstrategiesforfutureprogressinthefield.
-Figure1: OverviewofRoboCasa365. RoboCasa365isalarge-scalesimulationframeworkfortrainingand
-benchmarkinggeneralistrobots.RoboCasa365includes365everydaytasks,2500diversekitchenscenes,over
-600hoursofhumandemonstrationdata,plus1600hoursofsyntheticallygenerateddemonstrationdata,and
-systematicbenchmarksfortrainingandevaluatinggeneralistrobotmodels.
-1
+\keepXColumns
 
-PublishedasaconferencepaperatICLR2026
-1 INTRODUCTION
-Recentadvancesinrobotlearninghavebroughtthefieldclosertogeneralistrobotscapableofper-
-formingabroadrangeoftasksacrossdiverseenvironments. Agrowingbodyofworkhasfocused
-on collecting large-scale real-world robot datasets and training high-capacity robotic foundation
-models(Blacketal.,2024;GeminiRoboticsTeametal.,2025;NVIDIAetal.,2025;PhysicalIntel-
-ligenceetal.,2025). Thesemodelshavedemonstratedmeaningfulgeneralizationtonovelobjects,
-environments,andtasks,showinggreatpromisetowardsdevelopingbroadlycapablepolicies.
-Despitetheseadvances,twomajorchallengesremain. First,traininggeneralistrobotsrequiresvast
-amountsofrobotexperiencedata. Althoughrecentdatasetshavegrownsubstantiallyinsize, they
-remain limited in diversity and task coverage, which constrains the ability to train robust, gener-
-alist policies. Second, real-world evaluation and benchmarking are resource-intensive and time-
-consuming. They are often affected by experimental noise, making it difficult to perform repro-
-ducible,systematiccomparisonsacrossmethods.
-Simulation provides a practical avenue for addressing these challenges. With simulation, we can
-createlarge-scaleinteractiondatasets, coveringaneffectivelyinfinitevarietyoftasksandenviron-
-ments(Mandlekaretal.,2023;Jiangetal.,2025). Simulationalsoenablesrapidexperimentation,
-controlledevaluation,andreproduciblebenchmarkingthatwouldbeinfeasibleinreal-worldrobotics
-(Saxenaetal.,2025). Together, thesecapabilitiesmakeitpossibletogeneratedata, trainpolicies,
-andsystematicallyevaluategeneralistrobotsatscale. However,existingsimulationframeworksfall
-shortofthispotential. Mostcurrenttoolssupportonlylimitedtasksandenvironments,oftenfocus-
-ing on simple object manipulation or single-room scenarios (Zhu et al., 2020; James et al., 2020;
-Wang et al., 2023). The datasets they generate are small relative to the diversity and complexity
-of real-world robotics challenges, and benchmarking is typically confined to these narrow condi-
-tions(Liuetal.,2023;Mandlekaretal.,2021). Consequently,itremainsdifficulttostudyhowtask
-diversity,environmentvariation,anddatasetscaleaffectpolicygeneralization.
-Toaddressthesegaps,weintroduceRoboCasa365,acomprehensivesimulationbenchmarkforev-
-eryday household robotics. RoboCasa365 is built on top of the RoboCasa simulation framework
-byNasirianyetal.(2024),andisstructuredaroundfourcorecomponents:
-Comprehensivetasks: RoboCasa365defines365tasksspanning60distinctkitchenactivities,in-
-cluding manipulation, semantic reasoning, long-horizon planning, and memory-dependent tasks.
-Thistaskdiversityallowsevaluationacrossmultipledimensionsofgeneralistrobotcapability.
-Diverse environments: The benchmark includes 2,500 unique kitchen scenes modeled from real
-kitchensacrosstheUnitedStates. Thesescenescaptureawidespectrumoflayouts,objectconfigu-
-rations,andvisualvariations,providingrealisticcontextsforavarietyofeverydaytasks.
-Large-scaledata:Thebenchmarkprovidesover2,000hoursofrobotinteractiondata.Thisincludes
-612 hours of human demonstration data and an additional 1615 hours of synthetic demonstration
-datausingtheMimicGendatagenerationtool(Mandlekaretal.,2023)tosignificantlyexpandthe
-quantityofdata.
-Systematic benchmarking: RoboCasa365 supports rigorous evaluation across three learning set-
-tings: massivelymulti-tasktraining, foundationmodeltraining, andlifelonglearning. Thebench-
-markisdesignedtofacilitatereproducible,large-scaleexperimentsandin-depthanalysisofwhich
-dataandenvironmentfactorsmoststronglyinfluencegeneralization.
-Byintegratingtheseelements,RoboCasa365providesalarge,diverse,andsystematicallystructured
-resourceforstudyinggeneralistrobotsinsimulation. Itenablesresearcherstoexplorealgorithms,
-run reproducible evaluations, and analyze the impact of task and environment diversity on policy
-generalization. UsingRoboCasa365,weconductextensiveexperimentstocomparestate-of-the-art
-methods, evaluate learning strategies, and investigate the factors that most strongly drive perfor-
-manceingeneralistrobotlearning.
-2 RELATED WORK
-Robot Simulation Frameworks. There is a long line of prior work on building robot simulation
-frameworks(Zhuetal.,2020;Guetal.,2023;Mittaletal.,2023;Taoetal.,2025;Szotetal.,2021;
-2
+# RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots
 
-PublishedasaconferencepaperatICLR2026
-Kolveetal.,2017;Lietal.,2023;2024;Liuetal.,2023;Deitkeetal.,2022). Somearefocusedon
-tabletopsettings(Zhuetal.,2020;Liuetal.,2023;Lietal.,2024;Jamesetal.,2020),whilewefocus
-onsimulatingentireroom-scalescenes,similartosomeotherpriorworks(Lietal.,2023;Nasiriany
-et al., 2024; Szot et al., 2021; Kolve et al., 2017). Our work is unique in that it features hundreds
-oftasksacrossthousandsofuniquescenes, large-scale,high-qualitydemonstrationdatasets, anda
-suiteofbenchmarksfortrainingandevaluatinggeneralistrobotmodels. Toourbestknowledge,our
-workisthefirstsimulationframeworktosatisfyallofthesecriteria.
-Datasets and Benchmarks for Generalist Robots. There have been numerous efforts towards
-collectinglargerobotdatasetsintherealworld(Brohanetal.,2022;Walkeetal.,2023;Khazatsky
-etal.,2024;OpenX-EmbodimentCollaborationetal.,2023).Evaluatingandbenchmarkingpolicies
-trainedonthesedatasetsinthe realworldischallengingduetotheresourcesneededto runlarge-
-scalesystematicevaluations,despiteseveralrecentapproachestowardsthisgoal(Atreyaetal.,2025;
-Zhou et al., 2023; Yenamandra et al., 2023; Zhou et al., 2025; Krotkov et al., 2016; Correll et al.,
-2018). Simulationenablesrunninglarge-scalebenchmarks. However,mostsimulationbenchmarks
-areconfined toa verynarrow distributionof tasksandenvironments (Mandlekaret al.,2021; Zhu
-et al., 2020; Liu et al., 2023; TRI LBM Team et al., 2025). Li et al. (2023) bring forth some of
-thelargestdiversityofenvironmentsandtaskstodate, butlackaccompanyinglarge-scaledatasets
-for all of these tasks. Nasiriany et al. (2024) include 100k demonstrations spanning 30 tasks and
-100scenes. Incontrast,ourdatasetscompriseover500kdemonstrationsacrossover300tasksand
-2500 unique scenes. While prior work focuses on benchmarking specific methods such as multi-
-tasktraining(TRILBMTeametal.,2025;Nasirianyetal.,2024)andlifelonglearning(Liuetal.,
-2023),weprovideacomprehensivesuiteofbenchmarkstosystematicallystudymulti-tasktraining,
-foundationmodeltraining,andlifelonglearning.
-Training Generalist Robots. There is a long body of work on learning generalist robot policies
-fromlarge,diverserobotdatasets(OctoModelTeametal.,2024;OpenX-EmbodimentCollabora-
-tionetal.,2023;NVIDIAetal.,2025;Brohanetal.,2023;Kimetal.,2024;Shukoretal.,2025;Wen
-etal.,2025). Inourwork,weaimtobeagnostictothechoiceofmodel,andinsteadcreatebench-
-marks to systematically assess the capabilities of these models across distinct settings, including
-multi-tasktraining,pretraining,andfine-tuningontargetdata,andlifelonglearning.
-3 ROBOCASA365: LARGE-SCALE SIMULATION OF 365 EVERYDAY TASKS
-WepresentRoboCasa365,alarge-scalesimulationframeworkfortrainingandbenchmarkinggen-
-eralistrobots. WeusetheexistingRoboCasasimulationframework(Nasirianyetal.,2024)asthe
-startinggroundforRoboCasa365andmakesignificanteffortstoscaleuptheassets,environments,
-tasks,anddatasets. Wealsoestablisharigorousbenchmarktostudystate-of-the-artpolicylearning
-methods, which we outline in Section 4. In the following sections, we outline the components of
-thissimulationframework: assets,scenes,tasks,anddatasets.
-3.1 EXPANDINGTHESCOPEOFASSETS
-RoboCasafeaturesadiversearrayofobjects,interactablefixtures,andappliances,withafocuson
-commontasksinkitchenenvironments. Weusetheexistinglibraryof2,509objectsfromNasiriany
-etal.(2024),spanning153objectcategories.Inadditiontothese,wesourceanadditionalcollection
-ofhigh-quality3Dassetsspanning57objectcategories. Thesearehigh-quality3Dassetssourced
-fromartistsandeditedtopreservestrictqualitystandards. Weusethesenewobjectstosupportnew
-tasksandtopopulatevariousareasofkitchenscenesgenerally. Weprovideacompleteinventoryin
-AppendixC.1.
-Inadditiontothe3Dassets, wesignificantlyexpandtherepertoireofinteractablefixturesandap-
-pliancesinthekitchenenvironment. RoboCasa(Nasirianyetal.,2024)includesatotalof20inter-
-actablefixturesandappliancesacross4categories: sinks,coffeemachines,stoves,andmicrowaves.
-Wesignificantlyexpandthescopeoftheseassetsto456instancesspanning12categories. Wein-
-cludenewcategoriesofappliances,suchastoasters,toasterovens,standmixers,blenders,andelec-
-trickettles. Alloftheseappliancesarearticulated,includingfridges,ovens,anddishwashers,which
-werenotpreviouslyarticulatedunderRoboCasa. Wemodeltheseassetsusingthesameformatas
-RoboCasa,asMJCFobjectswithannotationsoftheregions. Foreachcategory,weincludebetween
-3
+Soroush Nasiriany
+Affiliation: The University of Texas at Austin
 
-PublishedasaconferencepaperatICLR2026
-Pretraining
-Scenes
-Target
-Scenes
-Figure2: KitchenScenes. Oursimulationframeworkfeatures2,500distinctkitchenscenesforpretraining
-(top,representativesamplesshown),and10distincttargetkitchenscenes(bottom,allscenesshown).
-20and50 instancesinordertoensurethat thereissufficientdiversitytosupport generalization to
-novelinstances. WeprovideacompleteinventoryofourfixturesandappliancesinAppendixC.2.
-3.2 DIVERSEKITCHENSCENES
-Achieving generalization in robot learning requires exposure to a wide range of training environ-
-ments; we address this need by providing thousands of diverse kitchen scenes spanning a broad
-spectrumofhouseholdsettings. Wecategorizethesescenesintopretrainingandtarget splits. Our
-goalistousethepretrainingkitchenscenesforlarge-scaledatacollectionandsyntheticdatagen-
-erationpipelines;weusethetargetkitchenscenesfortargeteddatacollectionandforrunningmost
-ofourexperimentevaluations. UsingtheterminologyfromNasirianyetal.(2024),wedefineeach
-kitchensceneasacombinationoflayoutandstyle,wherethelayoutdefinesthefloorplan,andthe
-styledefinesthespecificselectionoffixtures,appliances,andtexturesusedinthekitchen. Wecan
-configureeachkitchenscenetouseanycombinationoflayoutandscene.
-For our target kitchens, we use the 10 layouts and 10 styles defined by Nasiriany et al. (2024) in
-RoboCasa,whereeachlayoutismatchedwithaspecificstyle,foratotalof10kitchenscenes. For
-our pretraining kitchen scenes, we create 50 distinct new layouts. In order to capture the distri-
-butionofdiversescenes, wesourceourkitchensfrom50real-worldhomeswithactivelistingson
-Zillow.com, a real estate marketplace. These homes span diverse geographic locations across the
-United States. We build digital cousin (Dai et al., 2024) replicas for each of these environments,
-making sure to match the floor plan as closely as possible. In addition to these layouts, we create
-50distinctstyles. Weensurethatthepretrainingandtargetstylesdonotoverlapintheselectionof
-thefixtures,appliances,orenvironmenttexturesused. Together,wehaveatotalcombinationof50
-layouts×50styles,foratotalof2,500pretrainingkitchenscenes. Weprovideanoverviewofthe
-pretrainingandtargetkitchenscenesinFigure2.
-3.3 SUITEOF365EVERYDAYTASKS
-Weaimtoprovideadiversesetoftaskstosupportsharingknowledgeacrosstasksandgeneralizing
-to new tasks. Nasiriany et al. (2024) define two broad categories of tasks: atomic tasks, which
-representtheexecutionofasingleskill,andcompositetasks,whichinvolveexecutingasequenceof
-skills. Nasirianyetal.(2024)defineeightfoundationalskills: (1)pick-and-place,(2)openingand
-4
+Sepehr Nasiriany
+Affiliation: The University of Texas at Austin
 
-Activity list redesign - v0 by Vercel https://v0.app/chat/activity-list-redesign-op1uOLS0I4I?b=b_VWxjMdrKlyf&f=1
-PublishedasaconferencepaperatICLR2026/
-/ Latest(edited)
-Chat
-Design
-Git
-Connect
-Vars
-| Template Task:BlendIngredients | Activity Families       |                         | Task:LoadDishwasher |
-| ------------------------------ | ----------------------- | ----------------------- | ------------------- |
-| Se!ings                        | Beverage Preparation    | Cleaning and Sanitizing |                     |
-|                                | Adding Ice to Beverages | Cleaning Appliances     |                     |
-|                                | Brewing                 | Cleaning Sink           |                     |
-|                                | Making Juice            | Loading Dishwasher      |                     |
-|                                | Making Smoothies        | Organizing Recycling    |                     |
-InAsskt ra ufocllotwi-ounpÉ:Open the blender lid, put the pear in the blender, close Making Tea Sanitizing Surface Instruction:Pick the cup and bowl from the counter, place them in
-the lid, and  s t a rt the blender. Preparing Hot Chocolate Sanitizing Cu!ing BoUanrsdaved Changes the  d i s hwasher, and close the dishwasher door.
-| v0  M a x |     |     | Reset S a v e |
-| --------- | --- | --- | ------------- |
-Washing Dishes
-| Task:GetToastedBread |               |                     | Task:GatherProduceWashing |
-| -------------------- | ------------- | ------------------- | ------------------------- |
-|                      | Cooking       | Food Preparation    |                           |
-|                      | Baking        | Chopping Food       |                           |
-|                      | Boiling       | Chopping Vegetables |                           |
-|                      | Broiling Fish | Clearing Table      |                           |
-|                      | Frying        | Defrosting Food     |                           |
-|                      | Making Toast  | Making Salads       |                           |
-Instruction:Start the toaster. Once the lever pops up, take the Sauteing Vegetables Measuring Ingredients Instruction:Pick up the pear and cucumber from the fridge and
-bread to the plate on the dining counter. Toasting Bread Washing Fruits & Vegetables place them in the bowl next to the sink.
-|                    | ááá                            | ááá                    |                      |
-| ------------------ | ------------------------------ | ---------------------- | -------------------- |
-| Task:EmptyDishRack | Organizing and Storage         | Serving                | Task:AlignSilverware |
-|                    | Arranging Cabinets             | Arranging Bu"et        |                      |
-|                    | Loading Fridge                 | Arranging Condiments   |                      |
-|                    | Managing Freezer Space         | Filling Serving Dishes |                      |
-|                    | Organizing Dishes & Containers | Garnishing Dishes      |                      |
-|                    | Organizing Utensils            | Packing Lunches        |                      |
-Instruction:Pick up the mug from the dish rack and place it inside Restocking Supplies Plating Food Instruction:Take the fork and place it on the left side of the plate
-|     | Sorting Ingredients | Se!ing the Table |     |
-| --- | ------------------- | ---------------- | --- |
-the open cabinet where all mugs go. Then close the cabinet door. Storing Leftovers ááá and place the spoon on the right side of the plate.
-Figure3:CompositeTasks. RoboCasa365features300compositetasksthatinvolveasequenceofskills. We
-uselargelanguagemodelstogenerateasetofhigh-levelactivities,andforeachactivity,asetoftaskblueprints.
-There are 6 activity families (high-level categories) spanning 60 activities, which organize composite tasks
-basedonsharedfunctionalandsemanticstructure.Representativetasksareshownforselectedactivities.
-1 of 1 2/8/26, 2:30 PM
-closing doors, (3) opening and closing drawers, (4) turning levers, (5) turning knobs, (6) pressing
-buttons,(7)insertion,and(8)navigation. Weadopttheseskillsasthebasisforouratomictasks. In
-additiontothe25atomictasksinRoboCasa,wecreateanadditionalsetof40newatomictasksto
-supportvariousnewappliancesandnewbehaviorsaffordedbyoursimulator. Weprovidetheentire
-listof65atomictasksinAppendixE.1.
-For our composite tasks, we follow the framework established by Nasiriany et al. (2024), where
-weuselargelanguagemodelstosolicittaskblueprints. Theprocessfollowstwostages. First, we
-promptLLMstogivealistofactivitiesrepresentinghigh-levelgroupsoftasksinkitchenenviron-
-ments. We retrieve a list of the top 60 activities, such as boiling water, toasting bread, brewing
-coffee,washingdishes,andstoringleftovers,tonameafew. Foreachactivity,wethenpromptthe
-LLMtoprovidetaskblueprints,whichconsistofthenameofthetask,ahigh-leveldescriptionofthe
-task,theobjectsandfixturesinvolved,andthesequencesofskillsneededtosolvethetask. Wethen
-proceedtowritecodeforthetasksbasedontheseblueprints. Weuse83oftheexistingcomposite
-tasksfromRoboCasaandgenerateanadditionalsetof217newcompositetasks,foratotalof300
-compositetasks. WeoutlinethefulllistofactivitiesandrepresentativecompositetasksinFigure3.
-Intotal,ourbenchmarkincludes365everydaytasks: 65atomictasksand300compositetasks. Out
-ofthese,220requiremobilemanipulation,while145canbeperformedwithoutmobility.
-3.4 DATASETS
-Weprovidealargecollectionofrobotdatasetscoveringallofourtasks. Broadly, ourdatasetsare
-divided into two categories: pretraining datasets for data from the pretraining scenes, and target
-datasetsfromthetargetscenes.
-3.4.1 PRETRAININGDATASETS
-Out of the 365 total tasks outlined in Section 3.3, our pretraining data covers 300 tasks, with 65
-atomictasksand235compositetasks. Foreachofthese300tasks,wecollect100humandemon-
-strations per task via robot teleoperation. This results in 30k human demonstrations total for pre-
-training. Forourdatacollection, weusetheFrankaPandaEmikarobot, equippedwithanOmron
-mobile base (Haviland et al., 2022), and in principle, our simulation framework can support data
-collectionwithothermobilemanipulatorsandhumanoidplatforms.
-5
+Abhiram Maddukuri
+Affiliation: The University of Texas at Austin
 
-PublishedasaconferencepaperatICLR2026
-WealsousetheMimicGengenerationsystem(Mandlekaretal.,2023)togeneratelarge-scalesyn-
-theticdataacross60atomictasks. Foreachtask,weusethe100humandemonstrationspreviously
-collectedasseeddemonstrations,andgenerate10kdemonstrations,effectivelyscalingdata100×.
-3.4.2 TARGETDATASETS
-Forourtargetdata,wechoose50representativeonesoutofthe365tasks,groupedintothreesplits:
-• Atomic (18 tasks): We include 18 representative tasks out 65 total atomic tasks in the
-benchmark.
-• Composite-Seen (16 tasks): We choose 16 representative composite tasks spanning
-16activities. Theseincludeamixofshortandlong-horizontasks,withsomeinvolving2
-subtasksandthelongesttaskinvolving15subtasks.
-• Composite-Unseen(16tasks):Totesttheeffectofourpretrainingdata,wealsochoose
-16compositetasksthatareunseeninthepretrainingdata. Thesetasksareofsimilardiffi-
-cultytothecompositeseentasks,butfocusonanotherdistinctsetof16activities.
-We list the entire set of 50 target tasks in Appendix E.2. For each of these tasks, we collect 500
-humandemonstrationsviarobotteleportation,foratotalof25kdemonstrations.
-3.4.3 DATASETSTATISTICS
-Weprovideahigh-leveloverviewofourdatasetsinAppendixF.Ourpretrainingsyntheticdemon-
-strationdatasetspansthehighestamountofdata,with1615totalhours,followedbyhumanpretrain-
-ingdata(404hours),andthenhumantargetdata(208hours). InFigure4awereportthedistribution
-overthenumberofsubtasksrequiredforeachofour365tasks. Mosttasksrequireoneortwosub-
-tasks,butthereareafewtasksthatrequire15ormoresubtaskstocomplete. InFigure4b,wereport
-thedistributionofepisodelengthsacrossallpretrainingandtargethumandata(55kepisodes). The
-majorityofepisodesrangefrom10to60seconds,withalongtailendforlongerhorizonepisodes,
-somegoingbeyond3minutes.
-100
-80
-60
-40
-20
-0
-1 2 3 4 5 6 7 8 9 11 12 15 16
-Number of Subtasks
-tnuoC
-ksaT
-Distribution of Required Subtasks per Task
-(a)Distributionofrequiredsubtaskspertask.
-01-0 02-01 03-02 04-03 05-04 06-05 07-06 08-07 09-08 001-09 011-001 021-011 031-021 041-031 051-041 +051
-10000
-8000
-6000
-4000
-2000
-0
-Demo length (seconds)
-someD
-fo
-rebmuN
-Distribution of Human Demonstration Episode Lengths
-(b)Distributionofdemonstrationlengths.
-Figure 4: Distribution of task lengths (by number of subtasks) and dataset episode lengths (by number of
-seconds).Weobservealongtailoftasksanddatarepresentinglong-horizonbehaviors.
-4 EXPERIMENTS
-In our experiments, we conduct a systematic study to understand the key factors that influence
-training generalist robot policies. To this end, we design a comprehensive suite of benchmarks
-aimedatansweringthefollowingquestions:
-1. Howwelldogeneralistrobotmodelsperformwhentrainedonlargemulti-taskdatasets?
-2. Whatroledoespretrainingdataplay,andtowhatextentcanitimprovelearningofdown-
-streamtasks?
-6
+Yuke Zhu
+Affiliation: The University of Texas at Austin
+Affiliation: NVIDIA Research; \* Equal contributionhttps://robocasa.ai
 
-PublishedasaconferencepaperatICLR2026
-3. Howeffectivelycanwelearnnewtasksinlifelonglearningsettings?
-4. Howdoesthescopeandcompositionofpretrainingdataimpactlearningdownstreamtasks?
-4.1 MULTI-TASKTRAINING
-Webeginbyinvestigatinghowstate-of-the-artmethodsperformwhentrainedonmassivelymulti-
-taskdatasets. Thisevaluationisacriticalsteptowarddevelopinggeneralistrobotsthatcannotonly
-masterawiderangeofbehaviorsbutalsoadapttoentirelynoveltasksbeyondtheirtrainingdata.
-We train language-conditioned vision-based policies on the mixture of 300 pretraining human
-datasets outlined in Section 3.4.1. Each task has 100 human demonstrations, for a total of 30k
-demonstrations. Ourexperimentsfeaturefourstate-of-the-artmethods:Diffusionpolicy(Chietal.,
-2023),π (Blacketal.,2024),π (PhysicalIntelligenceetal.,2025),andGR00TN1.5(NVIDIA
-0 0.5
-etal.,2025).
-We train a multi-task language-conditioned policy for each method. We use the pretrained check-
-points released publicly for π , π , and GR00T N1.5 as the base model for training our models.
-0 0.5
-WeprovidedetailsonthetrainingprotocolsforeachmethodinAppendixG.
-We evaluate on the 50 tasks outlined in Section 3.4.2: Atomic, Composite-Seen, and
-Composite-Unseen. Note that the Composite-Unseen tasks represent unseen tasks in the
-pretrainingdata; ourevaluationforthesetasksiszero-shot, aimedatunderstandinggeneralization
-tonoveltasks. Weevaluateinthepretrainingkitchenscenesforeachtaskandreportaveragetask
-completionsuccessratesacrossmethods. SeeAppendixGfordetailsontheevaluationprotocol.
-TaskSplit DiffusionPolicy π π GR00TN1.5
-0 0.5
-Atomic 15.7 36.3 39.6 43.0
-Composite-Seen 0.2 5.2 7.1 9.6
-Composite-Unseen 1.25 0.7 1.2 4.4
-Average 6.1 15.0 16.9 20.0
-Table1: Multi-taskTrainingResults. Wecomparestate-of-the-artpolicylearningapproachesonourhuman
-pretrainingdataacross300tasks,andreporttasksuccessrates(%)acrossseenandunseentasks. Weseethat
-learningcompositetasksismorechallenging,andthatperformancesufferswhenevaluatingonunseentasks.
-WereportresultsinTable1. Overall,weseethatacrossallmethods,learningAtomictasksisthe
-easiest,followedbylearningComposite-SeentasksandComposite-Unseentasks. Thisis
-reasonable, as the Atomic tasks are shorter-horizon tasks that present fewer learning challenges
-for imitation learning (Ross et al., 2011), and the lower performance on Composite-Unseen
-tasksisduetothefactthatthemodelhasneverbeentrainedonthesetasks. Overall,GR00TN1.5
-performsthebestamongallmethods,followedbyπ ,π ,andfinallyDiffusionPolicy. Theyshow
-0.5 0
-non-zerosuccessratesonComposite-Unseentasks,asignofstrongergeneralizationabilities.
-DiffusionPolicyperformstheworst,highlightinghowhigh-capacityvision-language-actionmodels
-can better fit large, diverse multi-task robot datasets. While our multi-task learning experiments
-show that GR00T N1.5 outperforms other baselines, we do not claim that it is conclusively the
-superiormethod. Performancecanbeinfluencedbymanyfactors,includingtheamountofcompute
-used (e.g., batch size), data composition, and whether the visual or language backbones are fine-
-tuned. Overall,weseeasignificantopportunityforfuturemethodstoimproveupontheseresults.
-4.2 FOUNDATIONMODELTRAINING
-Inournextexperiment,weareinterestedinstudyingfoundationmodeltraining, i.e.,trainingwith
-ourpretrainingdatasets,followedbyfine-tuningonourtargetdatasets. Thislearningparadigmhas
-been established by numerous prior works in robotics (Black et al., 2024; NVIDIA et al., 2025),
-withevidencethatpretrainingcanaidlearningdownstreamtasksinamorerobustanddata-efficient
-manner. In our experiments, our pretraining data includes human datasets across 300 tasks (411
-hours),andsyntheticdataacross60atomictasks(1,615hours),whileourtargetdataincludeshuman
-datasets across 50 tasks (208 hours). Out of the 50 target tasks, 34 are also represented in the
-human pretraining data (Atomic and Composite-Seen tasks), and the target data includes an
-additional16compositetasksthatarenotseeninthepretrainingdata(Composite-Unseen). We
-7
+###### Abstract
 
-PublishedasaconferencepaperatICLR2026
-|     |     | PretrainingOnly |     |     | TargetOnly | Pretraining+TargetPost-Training |     |
-| --- | --- | --------------- | --- | --- | ---------- | ------------------------------- | --- |
-TaskType
-|                  |     |     |      | 10%  | 30%  | 100% 10% 30%   | 100% |
-| ---------------- | --- | --- | ---- | ---- | ---- | -------------- | ---- |
-| Atomic           |     |     | 41.9 | 38.7 | 50.6 | 60.6 56.9 59.1 | 68.5 |
-| Composite-Seen   |     |     | 0.0  | 11.0 | 22.7 | 35.0 25.4 34.6 | 40.6 |
-| Composite-Unseen |     |     | 0.2  | 11.2 | 27.5 | 33.3 22.7 30.8 | 42.1 |
-| Average          |     |     | 15.1 | 21.0 | 34.3 | 43.7 35.9 42.2 | 51.1 |
-Table2: FoundationModelTrainingResults. Comparingtheimpactoftrainingonpretrainingandtarget
-datasetsonlearningdownstreamtasks.Theperformancesaremeasuredbyaveragetasksuccessrates(%).
-firsttrainonallofourpretrainingdatasets(seeSection3.4.1),followedbyfine-tuningindependently
-onthreeseparatetargetsplitdatasets(Atomic,Composite-Seen,Composite-Unseen;see
-Section 3.4.2). We compare learning on different amounts of target data, with 50, 150, and 500
-demospertask,representing10%,30%,and100%ofthetotaltargetdata.
-Unlessotherwisenoted,weuseGR00TN1.5asthemodelfortheseexperimentsandallsubse-
-quentexperiments. Weopensourceallmodelsforthecommunitytobenchmarkallmethods. We
-comparepretrainingonly,targettasklearningonly,andpretrainingfollowedbypost-trainingontar-
-getdata. Aftertraining,weevaluatethemodelacrossthe50targettasksinthetargetkitchens. See
-AppendixGforadetaileddiscussionofthetrainingandevaluationprotocols. Wereportexperiment
-resultsinTable2.
-| We see | that with pretraining | alone, | the | model | per- |     |     |
-| ------ | --------------------- | ------ | --- | ----- | ---- | --- | --- |
-Foundation Model Training Results
-| forms over                     | 40% on the | atomic | tasks           | but performs |     |     |     |
-| ------------------------------ | ---------- | ------ | --------------- | ------------ | --- | --- | --- |
-| verypoorlyonthecompositetasks. |            |        | Fortargetlearn- |              |     | 50  |     |
-)%( etaR sseccuS ksaT gvA
-45
-| ing only,                                   | we see more | capable | policies. | However, |     |     |     |
-| ------------------------------------------- | ----------- | ------- | --------- | -------- | --- | --- | --- |
-| theyrequireahighamountofdatatobeperformant. |             |         |           |          |     | 40  |     |
-Usingpretrainingyieldssignificantimprovementsin
-35
-| modelperformance. | Thesegainsareespeciallypro- |     |     |     |     |     |     |
-| ----------------- | --------------------------- | --- | --- | --- | --- | --- | --- |
-30
-| nounced | for the Composite-Unseen |     |     | tasks | (see |     |     |
-| ------- | ------------------------ | --- | --- | ----- | ---- | --- | --- |
-25
-| Table 2). | We visualize | the         | improvement | in      | per- |     |                  |
-| --------- | ------------ | ----------- | ----------- | ------- | ---- | --- | ---------------- |
-|           |              |             |             |         |      | 20  | Pretraining only |
-| formance  | in Figure 5, | visualizing | the         | average | task |     |                  |
-Target only
-success rates from Table 2. We observe a roughly 15 Pretraining + Target Post-training
-3× improvement in data efficiency, i.e., pretraining 0 50(10%) 150(30%) 500(100%)
-Quantity of Target Demos per Task
-helpsachieveroughlythesameperformanceastar-
-get learning only with 3× higher number of target Figure5: FoundationModelTrainingResults.
-task demonstrations. In Appendix H.2, we present Pre-training enables more effective learning of
-arigorousrobustnessevaluationandanalyzetheef- downstreamtaskswithsignificantgainsindataef-
-| fectsofdifferentfactorsonperformance. |     |     |     |     |     | ficiency. |     |
-| ------------------------------------- | --- | --- | --- | --- | --- | --------- | --- |
-4.3 LIFELONGLEARNING
-Incontrasttotheconventionaltwo-stageparadigmofpretrainingfollowedbypost-trainingontarget
-data,real-worldrobotsmustoftenacquirenewskillscontinuously. Thissetting,knownaslifelong
-learning, involves learning tasks over a sequence of phases. The central challenge is leveraging
-priorknowledgetolearnnewtaskswhileretainingpreviouslyacquiredskills. Wedesignalifelong
-learning benchmark to assess these capabilities. In our experiments, we learn a series of tasks
-overfourphases. Eachphaseinvolveslearningprogressivelylongerhorizontasks. Phase1involves
-learning65atomictasks,Phase2involveslearning20newcompositetaskswith2or3stages,Phase
-3involveslearning20newcompositetaskswith4or5stages,andPhase4involveslearning20new
-compositetaskswith6ormorestages. Wedefine“stage”astheinvocationofoneoftherobotskills
-definedbyNasirianyetal.(2024), suchaspick-and-place, turningknobs, andnavigation. Weuse
-pretrainingdatasetsforthesephases;Phase1includesallhumanandMimicGendatasetsforatomic
-tasks,whilePhases2,3,and4featurehumandatasets.
-ForeachphaseN,wetakethemodelpreviouslytrainedfromphaseN −1,andfine-tuneitfordata
-pertaining to the tasks in phase N. After training completes for phase N, we run evaluations for
-tasksfromphase1throughphaseN inthepretrainingkitchensandreportresults. Wereportresults
-inTable3. Wemaketwodistinctobservations. First,weseethatthesuccessratessteadilydropas
-welearnprogressivelylonger-horizontasksineachnewphase(seethediagonalentriesinthetable).
-8
+Recent advances in robot learning have accelerated progress toward generalist robots that can perform everyday tasks in human environments. Yet it remains difficult to gauge how close we are to this vision. The field lacks a reproducible, large-scale benchmark for systematic evaluation. To fill this gap, we present RoboCasa365, a comprehensive simulation benchmark for household mobile manipulation. Built on the RoboCasa platform, RoboCasa365 introduces 365 everyday tasks across 2,500 diverse kitchen environments, with over 600 hours of human demonstration data and over 1600 hours of synthetically generated demonstration data—making it one of the most diverse and large-scale resources for studying generalist policies.
+RoboCasa365 is designed to support systematic evaluations for different problem settings, including multi-task learning, robot foundation model training, and lifelong learning. We conduct extensive experiments on this benchmark with state-of-the-art methods and analyze the impacts of task diversity, dataset scale, and environment variation on generalization. Our results provide new insights into what factors most strongly affect the performance of generalist robots and inform strategies for future progress in the field.
 
-PublishedasaconferencepaperatICLR2026
-| Phase  | AtomicTasks | 2-3StageTasks |     | 4–5StageTasks | 6+StageTasks |     |
-| ------ | ----------- | ------------- | --- | ------------- | ------------ | --- |
-| Phase1 | 41.5        | -             |     | -             |              | -   |
-| Phase2 | 13.9        | 24.5          |     | -             |              | -   |
-| Phase3 | 13.9        | 4.8           |     | 11.3          |              | -   |
-| Phase4 | 10.6        | 1.7           |     | 2.7           |              | 4.3 |
-Table 3: Lifelong Learning Results. We train across four phases with progressively longer horizon tasks.
-Aftereachphase,wereporttasksuccessrates(%)acrossalltasksseeninthecurrentandpreviousphases.
-Thisisintuitivelythecase,aslearninglonger-horizontaskscandemandhigherdatarequirements.
-Second,weseethattheperformanceonpreviouslylearnedtaskssteadilydropswitheachnewphase.
-Thishighlightsthecatastrophicforgettingproblem,i.e.,performancedegradesonpriortasksifthe
-agentdoesnotcontinuetotrainontheminsubsequentphases. Overall,thisexperimenthighlights
-thecurrentchallengeswithlifelonglearningandisausefultestbedforimprovingupontheseresults.
-4.4 PRETRAININGDATACOMPOSITIONSTUDY
-InSection4.2,weshowedthatpretrainingbringsforthsignificantimprovementsindataefficiency
-for learning downstream target tasks. In this section, we run experiments to further understand
-howthecompositionofpretrainingdataaffectsdownstreamperformance. Inourfoundationmodel
-trainingexperiments,weusedalloftheavailablepretrainingdata,comprisinghumandatafrom300
-tasksandMimicGendataacross60tasks(Human300+MG60). Wecomparetoavariantthatdoes
-notincludeMimicGendataandonlyincludesthehumandata(Human300).Tobetterunderstandthe
-roleoftaskdiversityinthepretrainingdata,wecomparetwovariantsthatincludehumandatafrom
-50tasks(Human50). These50tasksincludetheAtomicandComposite-Seentasks,aswellas
-anadditionalrandomlyselectedsetoftasks. Finally,wecomparewiththecasewithnopretraining
-data. OurpretrainingandtargetprotocolareidenticaltotheprocessinSection4.2. Wespecifically
-runtwoseparatesetsofexperiments,oneforthelow-dataregimewith10%ofthetargetdata,and
-oneforthehigh-dataregimewith100%ofthetargetdata.
-PretrainingData
-TargetData
-|                  |       | NoPretraining | Human50 | Human300  | Human300+MG60 |      |
-| ---------------- | ----- | ------------- | ------- | --------- | ------------- | ---- |
-| Atomic (10%)     |       | 38.7          |         | 52.0 57.0 |               | 56.9 |
-| Composite-Seen   | (10%) | 11.0          |         | 26.2 28.7 |               | 25.4 |
-| Composite-Unseen | (10%) | 11.2          |         | 23.8 32.3 |               | 22.7 |
-40.0
-| Average(10%)     |        | 21.0 |     | 34.7      |     | 35.9 |
-| ---------------- | ------ | ---- | --- | --------- | --- | ---- |
-| Atomic (100%)    |        | 60.6 |     | 68.1 70.0 |     | 68.5 |
-| Composite-Seen   | (100%) |      |     |           |     |      |
-|                  |        | 35.0 |     | 41.0 41.2 |     | 40.6 |
-| Composite-Unseen | (100%) | 33.3 |     | 38.5 44.0 |     | 42.1 |
-| Average(100%)    |        | 43.7 |     | 50.0 52.5 |     | 51.1 |
-Table4: PretrainingTaskDiversityResults. Wereporttasksuccessrates(%)andcomparethedownstream
-effectsoftrainingondifferentmixturesofpretrainingdata.
-We report evaluations in target kitchens in Table 4. Compared to training on all pretraining data
-(Human300+MG60),wefindthattrainingonjustthehumandata(Human300)yieldsbetterdown-
-streamlearningresults. AlthoughMimicGenenablesthelarge-scalegenerationofsynthetictrajec-
-tories,wefindthattheresultingdemonstrationsvaryinquality. Developingmethodsthatcanmore
-effectively leverage such large, mixed-quality datasets is an important direction for future work.
-ComparingtheHuman50andHuman300settings,weseethatincreasingthenumberofpretraining
-taskscanenableasignificantimprovementindownstreamtargettasks, especiallyforthelow-data
-regimetargetdatasetting. Notably,thebiggestgainsareseenfortheComposite-Unseentasks,
-suggestingthatincreasingthescopeoftaskdiversityisespeciallybeneficialforlearningnoveltasks.
-In addition to task diversity, we study the effects of scene diversity in pretraining on downstream
-performance. WereporttheseresultsinAppendixH.1.
-4.5 REAL-WORLDEXPERIMENTS
-Weconductanadditionalsetofexperimentstoexaminetheutilityofourbenchmarkfordownstream
-real-worldapplications. Ourreal-worldsetupusestheDROIDPandaarm(Khazatskyetal.,2024)
-withthreecameras.
-9
+|  |
+| --- |
+|  |
 
-PublishedasaconferencepaperatICLR2026
-Weexaminefourtasksinarealkitchen:
-|     | •   | CloseElectricKettleLid: |     |     | closetheelectrickettlelid |     |     |     |     |     |
-| --- | --- | ----------------------- | --- | --- | ------------------------- | --- | --- | --- | --- | --- |
-PickPlaceToasterOvenToCounter:
-|     | •   |     |     |     |     |     | place the item | from | the toaster | oven to the |
-| --- | --- | --- | --- | --- | --- | --- | -------------- | ---- | ----------- | ----------- |
-counter
-PickPlaceCounterToCabinet:
-|     | •   |     |     |     |     | placetheobjectfromthecountertothecabinet |     |     |     |     |
-| --- | --- | --- | --- | --- | --- | ---------------------------------------- | --- | --- | --- | --- |
-• PlaceOnDishRack: a longer horizon task, involving placing two items from the sink
-ontothedishrack.
-Wecollect30demonstrationsforeachofthefirstthreetasks,and50
-demonstrationsofthelasttask,foratotalof140real-worlddemon-
-strations. Wecomparethefollowingsettings:
-|     | •   | Real Only: | we  | train the GR00T | N1.5 | model | on the real- |     |     |     |
-| --- | --- | ---------- | --- | --------------- | ---- | ----- | ------------ | --- | --- | --- |
-worlddemonstrations(140demonstrations);
-|     | •   | Sim-and-Real(Ours): |     | wefirstmid-traintheGR00TN1.5 |     |     |     |     |     |     |
-| --- | --- | ------------------- | --- | ---------------------------- | --- | --- | --- | --- | --- | --- |
-modelonoursimulationtasks(weusedatafromthe150
-highestperformingtasksinsimulation),andthenco-fine-
-tunethemodelonthereal-worlddemonstrationsandcor-
-respondingdataforthefourreal-worldtasksinsimulation.
-| Following |     | best | practices | for sim-and-real | alignment |     | from Mad- |     |     |     |
-| --------- | --- | ---- | --------- | ---------------- | --------- | --- | --------- | --- | --- | --- |
-dukurietal.(2025),were-renderoursimulationdatasetstomatch
-thecameraviewsoftherealsetting,facilitatingimprovedtransfer. Figure6: Real-RobotPlatform.
-Aftertraining,weevaluateeachmodelintherealworld,wherewe Our real-world setup features a
-conduct20trialspertask. WereporttasksuccessratesinTable5. Pandarobotarminarealkitchen.
-|     |     |                    |     | CloseElectric | PickPlaceToasterOven |     | PickPlaceCounter |     | PlaceOn  |      |
-| --- | --- | ------------------ | --- | ------------- | -------------------- | --- | ---------------- | --- | -------- | ---- |
-|     |     |                    |     | KettleLid     | ToCounter            |     | ToCabinet        |     | DishRack | Avg  |
-|     |     | RealOnly           |     | 70            |                      | 70  |                  | 52  | 55       | 61.8 |
-|     |     | Sim-and-Real(Ours) |     | 70            |                      | 100 |                  | 84  | 65       | 79.8 |
-Table5: Real-worldevaluations. Acrossfourreal-worldtasks,wecomparetrainingonreal-worlddataonly
-versustrainingonamixtureofoursimulationandreal-worlddata. Byadditionallyusingsimulationdata,it
-outperformstrainingonreal-worlddataonlybyanaveragetasksuccessrateof18.1%.
-| Overall, |     | the Real | Only | model achieves | a 61.8% | average | success |     |     |     |
-| -------- | --- | -------- | ---- | -------------- | ------- | ------- | ------- | --- | --- | --- |
-rate, while Sim-and-Real training reaches 79.8%, a substantial improvement. This highlights the
-valueofoursimulationbenchmarkforbothalgorithmevaluationandreal-worldpolicylearning.
-5 CONCLUSION
-We presented RoboCasa365, a large-scale simulation framework for training and benchmarking
-generalistrobotmodels. RoboCasa365provides2,500realistickitchenenvironments,365everyday
-tasksspanningover50activitycategories,andover2,000hoursofrobotinteractiondata,makingit
-oneofthemostdiversesimulationresourcestodate.
-Using this benchmark, we conducted a systematic study along three axes: multi-task learning at
-scale, foundation model learning, and lifelong learning. Our experiments show that (i) generalist
-policiestrainedonlargemulti-taskdatasetscanacquirebroadcompetencebutstillfacechallenges
-withlong-horizontasks,(ii)pretrainingdatasignificantlyimprovesdownstreamlearning,withboth
-scaleandtaskdiversityplayingkeyroles,and(iii)lifelonglearningremainsanopenchallenge,with
-substantialtrade-offsbetweenacquiringnewtasksandretainingpriorknowledge.
-RoboCasa365 opens several avenues for future work. First, the benchmark is currently limited to
-kitchen environments, raising the question of how well findings transfer to other household set-
-tings or broader domains. Second, while the dataset is large, it does not capture the full sensory
-andphysicalcomplexityoftherealworld,andbridgingthegapbetweensimulationandreal-world
-deployment remains a significant challenge. Addressing these limitations will be an important di-
-rectionforfutureresearch.
-10
+![Refer to caption](2603.04356v1/Figure1.png)
 
-PublishedasaconferencepaperatICLR2026
-ACKNOWLEDGMENTS
-WethankQiWangforhisvaluableassistanceincoordinatingprojectresources,particularlyindata
-collectionandassetpreparation. WethankSteveXieandtheLightWheelteamfortheirclosecol-
-laborationinprovidingsimulationassetsandsupportwithdatacollection.WealsothankAjayMan-
-dlekar,Zi-angCao,andKevinLinfortheirassistancewithrunningbenchmarkingexperiments.Part
-ofthisworkwasdoneduringSoroushNasiriany’sinternshipatNVIDIAResearch. Thisworkwas
-partiallysupportedbytheNationalScienceFoundation(FRR-2145283,EFRI-2318065),theOffice
-ofNavalResearch(N00014-24-1-2550),theDARPATIAMATprogram(HR0011-24-9-0428),the
-ArmyResearchLab(W911NF-25-1-0065),andtheKIST-UTcollaboration(UTAUS-FA00004578).
-It was also supported by the Institute of Information & Communications Technology Planning &
-Evaluation (IITP) grant funded by the Korean Government (MSIT) (No. RS2024-00457882, Na-
-tionalAIResearchLabProject).
-REFERENCES
-PranavAtreya,KarlPertsch,TonyLee,MooJinKim,ArhanJain,ArturKuramshin,ClemensEpp-
-ner,CyrusNeary,EdwardHu,FabioRamos,etal. Roboarena: Distributedreal-worldevaluation
-ofgeneralistrobotpolicies. InProceedingsoftheConferenceonRobotLearning(CoRL2025),
-2025.
-LucasBeyer,AndreasSteiner,Andre´SusanoPinto,AlexanderKolesnikov,XiaoWang,DanielSalz,
-MaximNeumann,IbrahimAlabdulmohsin,MichaelTschannen,EmanueleBugliarello,Thomas
-Unterthiner, Daniel Keysers, Skanda Koppula, Fangyu Liu, Adam Grycner, Alexey Gritsenko,
-Neil Houlsby, ManojKumar, Keran Rong, Julian Eisenschlos, Rishabh Kabra, Matthias Bauer,
-Matko Bosˇnjak, Xi Chen, Matthias Minderer, Paul Voigtlaender, Ioana Bica, Ivana Balazˇevic´,
-JoanPuigcerver,PinelopiPapalampidi,OlivierHenaff,XiXiong,RaduSoricut,JeremiahHarm-
-sen,andXiaohuaZhai. Paligemma: Aversatile3bvlmfortransfer. arXivpreprint,2024. URL
-https://arxiv.org/abs/2407.07726.
-Kevin Black, Noah Brown, Danny Driess, Adnan Esmail, Michael Equi, Chelsea Finn, Niccolo
-Fusai,LachyGroom,KarolHausman,BrianIchter,SzymonJakubczak,TimJones,LiyimingKe,
-SergeyLevine,AdrianLi-Bell,MohithMothukuri,SurajNair,KarlPertsch,LucyXiaoyangShi,
-James Tanner, Quan Vuong, Anna Walling, Haohuan Wang, and Ury Zhilinsky. 0: A vision-
-language-actionflowmodelforgeneralrobotcontrol. arXivpreprintarXiv:2410.24164v1,2024.
-URLhttps://arxiv.org/abs/2410.24164v1.
-Anthony Brohan, Noah Brown, Justice Carbajal, Yevgen Chebotar, Joseph Dabis, Chelsea Finn,
-Keerthana Gopalakrishnan, Karol Hausman, Alex Herzog, Jasmine Hsu, et al. RT-1: Robotics
-transformerforreal-worldcontrolatscale. InarXivpreprintarXiv:2212.06817,2022.
-Anthony Brohan, Noah Brown, Justice Carbajal, Yevgen Chebotar, Xi Chen, Krzysztof Choro-
-manski, Tianli Ding, Danny Driess, Avinava Dubey, Chelsea Finn, Pete Florence, Chuyuan Fu,
-Montse Gonzalez Arenas, Keerthana Gopalakrishnan, Kehang Han, Karol Hausman, Alexan-
-der Herzog, Jasmine Hsu, Brian Ichter, Alex Irpan, Nikhil Joshi, Ryan Julian, Dmitry Kalash-
-nikov, Yuheng Kuang, Isabel Leal, Lisa Lee, Tsang-Wei Edward Lee, Sergey Levine, Yao Lu,
-Henryk Michalewski, Igor Mordatch, Karl Pertsch, Kanishka Rao, Krista Reymann, Michael
-Ryoo, Grecia Salazar, Pannag Sanketi, Pierre Sermanet, Jaspiar Singh, Anikait Singh, Radu
-Soricut, Huong Tran, Vincent Vanhoucke, Quan Vuong, Ayzaan Wahid, Stefan Welker, Paul
-Wohlhart,JialinWu,FeiXia,TedXiao,PengXu,SichunXu,TianheYu,andBriannaZitkovich.
-Rt-2: Vision-language-action models transfer web knowledge to robotic control, 2023. URL
-https://arxiv.org/abs/2307.15818.
-Cheng Chi, Siyuan Feng, Yilun Du, Zhenjia Xu, Eric Cousineau, Benjamin Burchfiel, and Shu-
-ran Song. Diffusion policy: Visuomotor policy learning via action diffusion. arXiv preprint
-arXiv:2303.04137,2023.
-Nikolaus Correll, Kostas E. Bekris, Dmitry Berenson, Oliver Brock, Albert Causo, Kris Hauser,
-Kei Okada, Alberto Rodriguez, Joseph M. Romano, and Peter R. Wurman. Analysis and ob-
-servations from the first amazon picking challenge. IEEE Transactions on Automation Science
-11
+Figure 1: Overview of RoboCasa365. RoboCasa365 is a large-scale simulation framework for training and benchmarking generalist robots. RoboCasa365 includes 365 everyday tasks, 2500 diverse kitchen scenes, over 600 hours of human demonstration data, plus 1600 hours of synthetically generated demonstration data, and systematic benchmarks for training and evaluating generalist robot models.
 
-PublishedasaconferencepaperatICLR2026
-and Engineering, 15(1):172–188, 2018. doi: 10.1109/TASE.2016.2600527. URL https:
-//doi.org/10.1109/TASE.2016.2600527.
-TianyuanDai,JosiahWong,YunfanJiang,ChenWang,CemGokmen,RuohanZhang,JiajunWu,
-andLiFei-Fei. Automatedcreationofdigitalcousinsforrobustpolicylearning. arXivpreprint
-arXiv:2410.07408,2024.
-Matt Deitke, Eli VanderBilt, Alvaro Herrasti, Luca Weihs, Jordi Salvador, Kiana Ehsani, Winson
-Han, Eric Kolve, Ali Farhadi, Aniruddha Kembhavi, and Roozbeh Mottaghi. Procthor: Large-
-scale embodied ai using procedural generation, 2022. URL https://arxiv.org/abs/
-2206.06994.
-Gemini Robotics Team, Saminda Abeyruwan, Joshua Ainslie, Jean-Baptiste Alayrac, Montser-
-rat Gonzalez Arenas, Travis Armstrong, Ashwin Balakrishna, Robert Baruch, Maria Bauza´,
-MichielBlokzijl,StevenBohez,KonstantinosBousmalis,AnthonyBrohan,ThomasBuschmann,
-Arunkumar Byravan, Serkan Cabi, Ken Caluwaerts, Federico Casarini, Oscar Chang, Jose´ En-
-rique Chen, Xi Chen, Hao-Tien Lewis Chiang, Krzysztof Choromanski, Davide D’Ambrosio,
-SudeepDasari,TodorDavchev,ColineDevin,NormanDiPalo,TianliDing,AdilDostmohamed,
-Danny Driess, Yilun Du, Debidatta Dwibedi, Michael Elabd, Claudio Fantacci, Cody Fong,
-Erik Frey, Chuyuan Fu, Marissa Giustina, Keerthana Gopalakrishnan, Laura Graesser, Leonard
-Hasenclever,NicolasHeess,BrandonHernaez,AlexanderHerzog,R.Hofer,Tsang-WeiEdward
-Lee,JackyLiang,YixinLin,SharathMaddineni,AnirudhaMajumdar,AssafHurwitzMichaely,
-RobertMoreno,MichaelNeunert,FrancescoNori,CarolinaParada,EmilioParisotto,PeterPas-
-tor,AcornPooley,KanishkaRao,KristaReymann,DorsaSadigh,StefanoSaliceti,PannagSan-
-keti, Pierre Sermanet, Dhruv Shah, Mohit Sharma, Kathryn Shea, Charles Shu, Vikas Sind-
-hwani, Sumeet Singh, Radu Soricut, Jost Tobias Springenberg, Rachel Sterneck, Razvan Surd-
-ulescu, JieTan, JonathanTompson, VincentVanhoucke, JakeVarley, GraceVesom, GiuliaVez-
-zani, Oriol Vinyals, Ayzaan Wahid, and Stefan Welker. Gemini robotics: Bringing ai into the
-physical world. CoRR, abs/2503.20020, March 2025. doi: 10.48550/arXiv.2503.20020. URL
-https://arxiv.org/abs/2503.20020.
-Jiayuan Gu, Fanbo Xiang, Xuanlin Li, Zhan Ling, Xiqiang Liu, Tongzhou Mu, Yihe Tang, Stone
-Tao,XinyueWei,YunchaoYao,etal. Maniskill2: Aunifiedbenchmarkforgeneralizablemanip-
-ulationskills. arXivpreprintarXiv:2302.04659,2023.
-JesseHaviland,NikoSu¨nderhauf,andPeterCorke. Aholisticapproachtoreactivemobilemanipu-
-lation. IEEERoboticsandAutomationLetters,7(2):3122–3129,2022.
-Stephen James, Zicong Ma, David Rovick Arrojo, and Andrew J Davison. Rlbench: The robot
-learningbenchmark&learningenvironment. IEEERoboticsandAutomationLetters,5(2):3019–
-3026,2020.
-Zhenyu Jiang, Yuqi Xie, Kevin Lin, Zhenjia Xu, Weikang Wan, Ajay Mandlekar, Linxi Fan, and
-YukeZhu. Dexmimicgen: Automateddatagenerationforbimanualdexterousmanipulationvia
-imitationlearning,2025. URLhttps://arxiv.org/abs/2410.24185.
-OussamaKhatib. Inertialpropertiesinroboticmanipulation: Anobject-levelframework. Interna-
-tionalJournalofRoboticsResearch,1995.
-Alexander Khazatsky, Karl Pertsch, Suraj Nair, Ashwin Balakrishna, Sudeep Dasari, Siddharth
-Karamcheti, SoroushNasiriany, MohanKumarSrirama, LawrenceYunliangChen, KirstyEllis,
-etal. Droid: Alarge-scalein-the-wildrobotmanipulationdataset,2024.
-Moo Jin Kim, Karl Pertsch, Siddharth Karamcheti, Ted Xiao, Ashwin Balakrishna, Suraj Nair,
-Rafael Rafailov, Ethan Foster, Grace Lam, Pannag Sanketi, Quan Vuong, Thomas Kollar, Ben-
-jamin Burchfiel, Russ Tedrake, Dorsa Sadigh, Sergey Levine, Percy Liang, and Chelsea Finn.
-Openvla: Anopen-sourcevision-language-actionmodel,2024. URLhttps://arxiv.org/
-abs/2406.09246.
-Eric Kolve, Roozbeh Mottaghi, Winson Han, Eli VanderBilt, Luca Weihs, Alvaro Herrasti, Matt
-Deitke,KianaEhsani,DanielGordon,YukeZhu,etal.AI2-THOR:Aninteractive3denvironment
-forvisualai. arXivpreprintarXiv:1712.05474,2017.
-12
+## 1 Introduction
 
-PublishedasaconferencepaperatICLR2026
-EricP.Krotkov,DouglasHackett,LarryJackel,MichaelPerschbacher,JamesPippine,JesseStrauss,
-Gill Pratt, and Christopher Orlowski. The darpa robotics challenge finals: Results and per-
-spectives. Journal of Field Robotics, 34(2):229–240, 2016. doi: 10.1002/rob.21683. URL
-https://onlinelibrary.wiley.com/doi/10.1002/rob.21683.
-Chengshu Li, Ruohan Zhang, Josiah Wong, Cem Gokmen, Sanjana Srivastava, Roberto Mart´ın-
-Mart´ın, Chen Wang, Gabrael Levine, Michael Lingelbach, Jiankai Sun, et al. Behavior-1k: A
-benchmarkforembodiedaiwith1,000everydayactivitiesandrealisticsimulation.InConference
-onRobotLearning,pp.80–93.PMLR,2023.
-Xuanlin Li, Kyle Hsu, Jiayuan Gu, Karl Pertsch, Oier Mees, Homer Rich Walke, Chuyuan Fu,
-Ishikaa Lunawat, Isabel Sieh, Sean Kirmani, Sergey Levine, Jiajun Wu, Chelsea Finn, Hao Su,
-Quan Vuong, and Ted Xiao. Evaluating real-world robot manipulation policies in simulation.
-arXivpreprintarXiv:2405.05941,2024.
-ZhiqiLi, GuoChen, ShilongLiu, ShihaoWang, V.S.Vibashan, YishenJi, ShiyiLan, HaoZhang,
-YilinZhao,SubhashreeRadhakrishnan,NadineChang,KaranSapra,AmalaSanjayDeshmukh,
-TuomasRintamaki,MatthieuLe,IliaKarmanov,LukasVoegtle,PhilippFischer,De-AnHuang,
-TimoRoman,TongLu,JoseM.Alvarez,BryanCatanzaro,JanKautz,AndrewTao,GuilinLiu,
-andZhidingYu. Eagle2: Buildingpost-trainingdatastrategiesfromscratchforfrontiervision-
-languagemodels. arXivpreprint,arXiv:2501.14818,2025.
-YaronLipman,RickyT.Q.Chen,HeliBen-Hamu,MaximilianNickel,andMattLe. Flowmatching
-forgenerativemodeling. InInternationalConferenceonLearningRepresentations(ICLR),2023.
-URLhttps://openreview.net/forum?id=KZy4-0etZgZ.
-Bo Liu, Yifeng Zhu, Chongkai Gao, Yihao Feng, Qiang Liu, Yuke Zhu, and Peter Stone. Libero:
-Benchmarkingknowledgetransferforlifelongrobotlearning. arXivpreprintarXiv:2306.03310,
-2023.
-Abhiram Maddukuri, Zhenyu Jiang, Lawrence Yunliang Chen, Soroush Nasiriany, Yuqi Xie,
-Yu Fang, Wenqi Huang, Zu Wang, Zhenjia Xu, Nikita Chernyadev, Scott Reed, Ken Goldberg,
-AjayMandlekar,LinxiFan,andYukeZhu. Sim-and-realco-training: Asimplerecipeforvision-
-basedroboticmanipulation.InProceedingsofRobotics:ScienceandSystems(RSS),LosAngeles,
-CA,USA,2025.
-AjayMandlekar,DanfeiXu,JosiahWong,SoroushNasiriany,ChenWang,RohunKulkarni,LiFei-
-Fei,SilvioSavarese,YukeZhu,andRobertoMart´ın-Mart´ın.Whatmattersinlearningfromoffline
-humandemonstrationsforrobotmanipulation. InConferenceonRobotLearning,2021.
-Ajay Mandlekar, Soroush Nasiriany, Bowen Wen, Iretiayo Akinola, Yashraj Narang, Linxi Fan,
-YukeZhu,andDieterFox. Mimicgen:Adatagenerationsystemforscalablerobotlearningusing
-humandemonstrations. arXivpreprintarXiv:2310.17596,2023.
-Mayank Mittal, Calvin Yu, Qinxi Yu, Jingzhou Liu, Nikita Rudin, David Hoeller, Jia Lin Yuan,
-Ritvik Singh, Yunrong Guo, Hammad Mazhar, Ajay Mandlekar, Buck Babich, Gavriel State,
-Marco Hutter, and Animesh Garg. Orbit: A unified simulation framework for interactive robot
-learning environments. IEEE Robotics and Automation Letters, 8(6):3740–3747, 2023. doi:
-10.1109/LRA.2023.3270034.
-Soroush Nasiriany, Abhiram Maddukuri, Lance Zhang, Adeet Parikh, Aaron Lo, Abhishek Joshi,
-AjayMandlekar,andYukeZhu. Robocasa: Large-scalesimulationofeverydaytasksforgener-
-alistrobots. InRobotics: ScienceandSystems(RSS),2024.
-NVIDIA, Nikita Cherniadev Johan Bjorck andFernando Castan˜eda, Xingye Da, Runyu Ding,
-Linxi”Jim”Fan, YuFang, DieterFox, FengyuanHu, SpencerHuang, JoelJang, ZhenyuJiang,
-Jan Kautz, Kaushil Kundalia, Lawrence Lao, Zhiqi Li, Zongyu Lin, Kevin Lin, Guilin Liu,
-Edith Llontop, Loic Magne, Ajay Mandlekar, Avnish Narayan, Soroush Nasiriany, Scott Reed,
-YouLiangTan,GuanzhiWang,ZuWang,JingWang,QiWang,JiannanXiang,YuqiXie,Yinzhen
-Xu,ZhenjiaXu,SeonghyeonYe,ZhidingYu,AoZhang,HaoZhang,YizhouZhao,RuijieZheng,
-andYukeZhu. GR00TN1: Anopenfoundationmodelforgeneralisthumanoidrobots. InArXiv
-Preprint,March2025.
-13
+Recent advances in robot learning have brought the field closer to generalist robots capable of performing a broad range of tasks across diverse environments. A growing body of work has focused on collecting large-scale real-world robot datasets and training high-capacity robotic foundation models ([Black et al., 2024](#bib.bib21); [Gemini Robotics Team et al., 2025](#bib.bib23); [NVIDIA et al., 2025](#bib.bib22); [Physical Intelligence et al., 2025](#bib.bib24)). These models have demonstrated meaningful generalization to novel objects, environments, and tasks, showing great promise towards developing broadly capable policies.
 
-PublishedasaconferencepaperatICLR2026
-Octo Model Team, Dibya Ghosh, Homer Walke, Karl Pertsch, Kevin Black, Oier Mees, Sudeep
-Dasari,JoeyHejna,CharlesXu,JianlanLuo,TobiasKreiman,YouLiangTan,LawrenceYunliang
-Chen,PannagSanketi,QuanVuong,TedXiao,DorsaSadigh,ChelseaFinn,andSergeyLevine.
-Octo: Anopen-sourcegeneralistrobotpolicy. InProceedingsofRobotics: ScienceandSystems,
-Delft,Netherlands,2024.
-Open X-Embodiment Collaboration et al. Open X-Embodiment: Robotic learning datasets and
-RT-Xmodels. https://arxiv.org/abs/2310.08864,2023.
-EthanPerez,FlorianStrub,HarmdeVries,VincentDumoulin,andAaronCourville. Film: Visual
-reasoningwithageneralconditioninglayer. InProceedingsoftheThirty-SecondAAAIConfer-
-enceonArtificialIntelligence(AAAI),volume32,pp.3942–3951,2018.doi:10.1609/aaai.v32i1.
-11671. URL https://aaai.org/ocs/index.php/AAAI/AAAI18/paper/view/
-17253.
-PhysicalIntelligence,KevinBlack,NoahBrown,JamesDarpinian,KaranDhabalia,DannyDriess,
-Adnan Esmail, Michael Equi, Chelsea Finn, Niccolo Fusai, Manuel Y. Galliker, Dibya Ghosh,
-LachyGroom,KarolHausman,BrianIchter,SzymonJakubczak,TimJones,LiyimingKe,Devin
-LeBlanc, Sergey Levine, Adrian Li-Bell, Mohith Mothukuri, Suraj Nair, Karl Pertsch, Allen Z.
-Ren,LucyXiaoyangShi,LauraSmith,JostTobiasSpringenberg,KyleStachowicz,JamesTanner,
-Quan Vuong, Homer Walke, Anna Walling, Haohuan Wang, Lili Yu, and Ury Zhilinsky. π :
-0.5
-a vision-language-action model with open-world generalization. CoRR, abs/2504.16054, April
-2025. doi: 10.48550/arXiv.2504.16054. URLhttps://arxiv.org/abs/2504.16054.
-Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agar-
-wal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, Gretchen Krueger, and Ilya
-Sutskever. Learningtransferablevisualmodelsfromnaturallanguagesupervision. InProceed-
-ingsofthe38thInternationalConferenceonMachineLearning(ICML),volume139ofProceed-
-ings of Machine Learning Research, pp. 8748–8763, 2021. URL https://proceedings.
-mlr.press/v139/radford21a.html.
-Ste´phaneRoss, GeoffreyGordon, andDrewBagnell. Areductionofimitationlearningandstruc-
-turedpredictiontono-regretonlinelearning. InProceedingsofthefourteenthinternationalcon-
-ferenceonartificialintelligenceandstatistics,pp.627–635,2011.
-Vaibhav Saxena, Matthew Bronars, Nadun Ranawaka Arachchige, Kuancheng Wang, Woo Chul
-Shin, Soroush Nasiriany, Ajay Mandlekar, and Danfei Xu. What matters in learning from
-large-scaledatasetsforrobotmanipulation,2025. URLhttps://arxiv.org/abs/2506.
-13536.
-Mustafa Shukor, Dana Aubakirova, Francesco Capuano, Pepijn Kooijmans, Steven Palma, Adil
-Zouitine, Michel Aractingi, Caroline Pascal, Martino Russi, Andres Marafioti, Simon Alibert,
-MatthieuCord,ThomasWolf,andRemiCadene. Smolvla: Avision-language-actionmodelfor
-affordableandefficientrobotics,2025. URLhttps://arxiv.org/abs/2506.01844.
-Andrew Szot, Alexander Clegg, Eric Undersander, Erik Wijmans, Yili Zhao, John Turner, Noah
-Maestre,MustafaMukadam,DevendraSinghChaplot,OleksandrMaksymets,etal. Habitat2.0:
-Traininghomeassistantstorearrangetheirhabitat. AdvancesinNeuralInformationProcessing
-Systems,34:251–266,2021.
-Stone Tao, Fanbo Xiang, Arth Shukla, Yuzhe Qin, Xander Hinrichsen, Xiaodi Yuan, Chen Bao,
-XinsongLin, YulinLiu, TsekaiChan, YuanGao, XuanlinLi, TongzhouMu, NanXiao, Arnav
-Gurha,VisweshNagaswamyRajesh,YongWooChoi,Yen-RuChen,ZhiaoHuang,RobertoCa-
-landra,RuiChen,ShanLuo,andHaoSu. Maniskill3: Gpuparallelizedroboticssimulationand
-renderingforgeneralizableembodiedai. Robotics: ScienceandSystems,2025.
-EmanuelTodorov,TomErez,andYuvalTassa. Mujoco: Aphysicsengineformodel-basedcontrol.
-InIEEE/RSJInternationalConferenceonIntelligentRobotsandSystems,pp.5026–5033,2012.
-TRI LBM Team, Jose Barreiros, Andrew Beaulieu, Aditya Bhat, Rick Cory, Eric Cousineau,
-Hongkai Dai, Ching-Hsin Fang, Kunimatsu Hashimoto, Muhammad Zubair Irshad, Masha Itk-
-ina, Naveen Kuppuswamy, Kuan-Hui Lee, Katherine Liu, Dale McConachie, Ian McMahon,
-14
+Despite these advances, two major challenges remain. First, training generalist robots requires vast amounts of robot experience data. Although recent datasets have grown substantially in size, they remain limited in diversity and task coverage, which constrains the ability to train robust, generalist policies. Second, real-world evaluation and benchmarking are resource-intensive and time-consuming. They are often affected by experimental noise, making it difficult to perform reproducible, systematic comparisons across methods.
 
-PublishedasaconferencepaperatICLR2026
-Haruki Nishimura, Calder Phillips-Grafflin, Charles Richter, Paarth Shah, Krishnan Srinivasan,
-Blake Wulfe, Chen Xu, Mengchao Zhang, Alex Alspach, Maya Angeles, Kushal Arora, Vi-
-tor Campagnolo Guizilini, Alejandro Castro, Dian Chen, Ting-Sheng Chu, Sam Creasey, Sean
-Curtis, Richard Denitto, Emma Dixon, Eric Dusel, Matthew Ferreira, Aimee Goncalves, Grant
-Gould, Damrong Guoy, Swati Gupta, Xuchen Han, Kyle Hatch, Brendan Hathaway, Allison
-Henry,HillelHochsztein,PhoebeHorgan,ShunIwase,DonovonJackson,SiddharthKaramcheti,
-SedrickKeh,JosephMasterjohn,JeanMercat,PatrickMiller,PaulMitiguy,TonyNguyen,Jeremy
-Nimmer, Yuki Noguchi, Reko Ong, Aykut Onol, Owen Pfannenstiehl, Richard Poyner, Leticia
-PriebeMendesRocha,GordonRichardson,ChristopherRodriguez,DerickSeale,MichaelSher-
-man, Mariah Smith-Jones, David Tago, Pavel Tokmakov, Matthew Tran, Basile Van Hoorick,
-Igor Vasiljevic, Sergey Zakharov, Mark Zolotas, Rares Ambrus, Kerri Fetzer-Borelli, Ben-
-jamin Burchfiel, Hadas Kress-Gazit, Siyuan Feng, Stacie Ford, and Russ Tedrake. A care-
-ful examination of large behavior models for multitask dexterous manipulation. 2025. URL
-https://arxiv.org/abs/2507.05331.
-Homer Walke, Kevin Black, Abraham Lee, Moo Jin Kim, Max Du, Chongyi Zheng, Tony Zhao,
-PhilippeHansen-Estruch, QuanVuong, AndreHe, VivekMyers, KuanFang, ChelseaFinn, and
-Sergey Levine. Bridgedata v2: A dataset for robot learning at scale. In Conference on Robot
-Learning(CoRL),2023.
-Lirui Wang, Yiyang Ling, Zhecheng Yuan, Mohit Shridhar, Chen Bao, Yuzhe Qin, Bailin Wang,
-HuazheXu,andXiaolongWang.Gensim:Generatingroboticsimulationtasksvialargelanguage
-models. InArxiv,2023.
-Junjie Wen, Yichen Zhu, Jinming Li, Minjie Zhu, Kun Wu, Zhiyuan Xu, Ning Liu, Ran Cheng,
-Chaomin Shen, Yaxin Peng, Feifei Feng, and Jian Tang. Tinyvla: Towards fast, data-efficient
-vision-language-actionmodelsforroboticmanipulation,2025. URLhttps://arxiv.org/
-abs/2409.12514.
-Sriram Yenamandra, Arun Ramachandran, Karmesh Yadav, Austin S. Wang, Mukul Khanna,
-The´ophile Gervet, Tsung-Yen Yang, Vidhi Jain, Alexander William Clegg, John M. Turner,
-ZsoltKira, Manolis Savva, Angel X. Chang, Devendra Singh Chaplot, Dhruv Batra, Roozbeh
-Mottaghi, Yonatan Bisk, and Chris Paxton. Homerobot: Open-vocabulary mobile manipula-
-tion. In Proceedings of the 7th Conference on Robot Learning (CoRL), volume 229 of Pro-
-ceedings of Machine Learning Research, pp. 1975–2011. PMLR, Nov 2023. URL https:
-//proceedings.mlr.press/v229/yenamandra23a.html.
-Gaoyue Zhou, Victoria Dean, Mohan Kumar Srirama, Aravind Rajeswaran, Jyothish Pari, Kyle
-Hatch, Aryan Jain, Tianhe Yu, Pieter Abbeel, Lerrel Pinto, Chelsea Finn, and Abhinav Gupta.
-Train offline, test online: A real robot learning benchmark. In Proceedings of the IEEE In-
-ternational Conference on Robotics and Automation (ICRA), pp. 9197–9203. IEEE, 2023. doi:
-10.1109/ICRA48891.2023.10160594. URL https://doi.org/10.1109/ICRA48891.
-2023.10160594.
-Zhiyuan Zhou, Pranav Atreya, You Liang Tan, Karl Pertsch, and Sergey Levine. Autoeval: Au-
-tonomousevaluationofgeneralistrobotmanipulationpoliciesintherealworld.InProceedingsof
-the9thConferenceonRobotLearning(CoRL),volume305ofProceedingsofMachineLearning
-Research,pp.1997–2017.PMLR,Sep2025. URLhttps://proceedings.mlr.press/
-v305/zhou25a.html.
-YukeZhu,JosiahWong,AjayMandlekar,andRobertoMart´ın-Mart´ın. robosuite: Amodularsimu-
-lationframeworkandbenchmarkforrobotlearning. InarXivpreprintarXiv:2009.12293,2020.
-A USE OF LARGE LANGUAGE MODELS
-We use the aid of large language models to create activity labels and task blueprints, using the
-processoutlinedbyNasirianyetal.(2024). Wealsouselargelanguagemodelsforsolicitingwriting
-feedbackforpartsofthismanuscript.
-15
+Simulation provides a practical avenue for addressing these challenges. With simulation, we can create large-scale interaction datasets, covering an effectively infinite variety of tasks and environments ([Mandlekar et al., 2023](#bib.bib9); [Jiang et al., 2025](#bib.bib36)). Simulation also enables rapid experimentation, controlled evaluation, and reproducible benchmarking that would be infeasible in real-world robotics  ([Saxena et al., 2025](#bib.bib37)). Together, these capabilities make it possible to generate data, train policies, and systematically evaluate generalist robots at scale.
+However, existing simulation frameworks fall short of this potential. Most current tools support only limited tasks and environments, often focusing on simple object manipulation or single-room scenarios ([Zhu et al., 2020](#bib.bib5); [James et al., 2020](#bib.bib3); [Wang et al., 2023](#bib.bib18)). The datasets they generate are small relative to the diversity and complexity of real-world robotics challenges, and benchmarking is typically confined to these narrow conditions ([Liu et al., 2023](#bib.bib15); [Mandlekar et al., 2021](#bib.bib1)). Consequently, it remains difficult to study how task diversity, environment variation, and dataset scale affect policy generalization.
 
-PublishedasaconferencepaperatICLR2026
-B SIMULATION INFRASTRUCTURE
-B.1 PHYSICSANDRENDERINGENGINE
-RoboCasa365isbuiltontopofRoboSuite(Zhuetal.,2020), whichusestheMuJoCophysicsen-
-gine(Todorovetal.,2012).WhileMuJoCo’scorephysicscomputationsareCPU-based,weleverage
-GPU-basedrendering.RoboCasa365simulatesat20Hz,withthesimulationrunningapproximately
-in real time, slightly faster or slower depending on scene complexity and hardware specifications.
-Multiple asynchronous environments can be run in parallel, allowing overall throughput to scale
-withthenumberofavailableCPUcoresandGPUs.
-B.2 ACTIONSPACE
-WeadopttheunderlyingcontrollerfromRoboCasa(Nasirianyetal.,2024). Specifically,weusean
-OperationalSpaceController(Khatib,1995)runningat20Hzthatcommandsthearmthroughseven
-actiondimensions: threefortranslation,threeforrotation,andoneforgripperopeningandclosing.
-Inaddition,weincludefiveactiondimensionsformobilebasetranslationandrotation,torsoheight
-control,andanactionmodethatgatesmobilebasecontrol.
-C SIMULATION ASSETS
-C.1 3DOBJECTS
-Wehaveaddednewobjectsacross57categories: aluminumfoil,basket,blenderjug,cheesegrater,
-chicken drumstick, cinnamon, colander, cookie dough ball, cream cheese stick, digital scale, dish
-brush,flourbag,glasscup,honeybottle,hotdogbun,icecube,icecubetray,jar,juice,kebabskewer,
-lemon wedge, lettuce, marshmallow, mayonnaise, measuring cup, mustard, non electric kettle, oil
-and vinegar bottle, oven tray, pancake, paprika, peeler, pickle slice, pitcher, pizza, pizza cutter,
-placemat,pot,reamer,saltandpeppershaker,sandwichbread,saucepan,saucepanlid,shrimp,soap
-dispenser, spray, strainer, straw, sugar cube, syrup bottle, tomato slice, tongs, tupperware, turkey
-slice,turmeric,whisk,andwoodenspoon.
-C.2 INTERACTIVEFIXTURESANDAPPLIANCES
-WereportaninventoryofallfixturesandappliancesinTable6.
-Category Uniquemodels
-Blender 22
-Coffeemachine 48
-Dishwasher 25
-Electrickettle 25
-Fridge 50
-Microwave 50
-Oven 21
-Sink 49
-Standmixer 25
-Stove 50
-Toaster 44
-Toasteroven 47
-Total 456
-Table6:Inventoryoffixturesandappliances
-16
+To address these gaps, we introduce RoboCasa365, a comprehensive simulation benchmark for everyday household robotics. RoboCasa365 is built on top of the RoboCasa simulation framework by [Nasiriany et al. (2024)](#bib.bib19), and is structured around four core components:
 
-PublishedasaconferencepaperatICLR2026
-D SCENES
-We build 50 kitchen layouts modeled after 50 homes on sale on Zillow.com. These homes span
-locationsintheBayArea(California),Austin(Texas),Denver(Colorado),Boston(Massachusetts),
-andAtlanta(Georgia).
-E TASKS
-E.1 ATOMICTASKS
-Wehave65atomictasks: AdjustToasterOvenTemperature,
-AdjustWaterTemperature,CheesyBread,CloseBlenderLid,CloseCabinet,
-CloseDishwasher,CloseDrawer,CloseElectricKettleLid,CloseFridge,
-CloseFridgeDrawer,CloseMicrowave,CloseOven,CloseStandMixerHead,
-CloseToasterOvenDoor,CoffeeServeMug,CoffeeSetupMug,LowerHeat,
-MakeIcedCoffee,NavigateKitchen,OpenBlenderLid,OpenCabinet,
-OpenDishwasher,OpenDrawer,OpenElectricKettleLid,OpenFridge,
-OpenFridgeDrawer,OpenMicrowave,OpenOven,OpenStandMixerHead,
-OpenToasterOvenDoor,PackDessert,PickPlaceCabinetToCounter,
-PickPlaceCounterToBlender,PickPlaceCounterToCabinet,
-PickPlaceCounterToDrawer,PickPlaceCounterToMicrowave,
-PickPlaceCounterToOven,PickPlaceCounterToSink,
-PickPlaceCounterToStandMixer,PickPlaceCounterToStove,
-PickPlaceCounterToToasterOven,PickPlaceDrawerToCounter,
-PickPlaceFridgeDrawerToShelf,PickPlaceFridgeShelfToDrawer,
-PickPlaceMicrowaveToCounter,PickPlaceSinkToCounter,
-PickPlaceStoveToCounter,PickPlaceToasterOvenToCounter,
-PickPlaceToasterToCounter,PreheatOven,SlideDishwasherRack,
-SlideOvenRack,SlideToasterOvenRack,StartCoffeeMachine,
-TurnOffMicrowave,TurnOffSinkFaucet,TurnOffStove,TurnOnBlender,
-TurnOnElectricKettle,TurnOnMicrowave,TurnOnSinkFaucet,TurnOnStove,
-TurnOnToaster,TurnOnToasterOven,andTurnSinkSpout.
-E.2 TARGETTASKS
-WeprovideanoverviewforthetargettasksacrossTables7,8,and9.
-17
+Comprehensive tasks: RoboCasa365 defines 365 tasks spanning 60 distinct kitchen activities, including manipulation, semantic reasoning, long-horizon planning, and memory-dependent tasks. This task diversity allows evaluation across multiple dimensions of generalist robot capability.
 
-PublishedasaconferencepaperatICLR2026
-| Activity Task | #Sub- MoMa | Description |
-| ------------- | ---------- | ----------- |
-tasks req.
-Closethelidblenderbysecurelyplacingthelid
-| Atomic CloseBlenderLid | 1 No |     |
-| ---------------------- | ---- | --- |
-ontop.
-| Atomic CloseFridge          | 1 No | Closethefridgedoor(s).   |
-| --------------------------- | ---- | ------------------------ |
-| Atomic CloseToasterOvenDoor | 1 No | Closethetoasterovendoor. |
-Pickthemugfromthecounterandplaceitunder
-| Atomic CoffeeSetupMug | 1 No |     |
-| --------------------- | ---- | --- |
-thecoffeemachinedispenser.
-| Atomic NavigateKitchen | 1 Yes | Navigatetothe[kitchenlocation]. |
-| ---------------------- | ----- | ------------------------------- |
-| Atomic OpenCabinet     | 1 No  | Openthecabinetdoor(s).          |
-OpenDrawer
-| Atomic                    | 1 No | Openthe[left/right]drawer. |
-| ------------------------- | ---- | -------------------------- |
-| Atomic OpenStandMixerHead | 1 No | Openthestandmixerhead.     |
-Picktheitemfromthecounterandplaceitinthe
-| Atomic PickPlaceCounterTo | 1 No |     |
-| ------------------------- | ---- | --- |
-cabinet.
-Cabinet
-Picktheitemfromtheplateandplaceitinthe
-| Atomic PickPlaceCounterTo | 1 No |     |
-| ------------------------- | ---- | --- |
-pan.
-Stove
-Picktheitemfromthedrawerandplaceitonthe
-| Atomic PickPlaceDrawerTo | 1 No |     |
-| ------------------------ | ---- | --- |
-counter.
-Counter
-Picktheitemfromthesinkandplaceitonthe
-| Atomic PickPlaceSinkTo | 1 No |     |
-| ---------------------- | ---- | --- |
-containerlocatedonthecounter.
-Counter
-| Atomic PickPlaceToasterTo | 1 No | Placethetoasteditemonaplate. |
-| ------------------------- | ---- | ---------------------------- |
-Counter
-SlideDishwasherRack Fullyslidethetopdishwasherrack[in/out].
-| Atomic | 1 No |     |
-| ------ | ---- | --- |
-Turnoffthe[burnerlocation]burnerofthe
-| Atomic TurnOffStove | 1 No |     |
-| ------------------- | ---- | --- |
-stove.
-Atomic TurnOnElectricKettle 1 No Pressdownthelevertoturnontheelectrickettle.
-Atomic TurnOnMicrowave 1 No Pressthestartbuttononthemicrowave.
-| Atomic TurnOnSinkFaucet | 1 No | Turnonthesinkfaucet. |
-| ----------------------- | ---- | -------------------- |
-Figure7:Post-trainingAtomic-SeenTasks(18)
-Note:The“MoMareq.”columnindicateswhetherthetaskrequiresMobileManipulationorbasenavigation.
-18
+Diverse environments: The benchmark includes 2,500 unique kitchen scenes modeled from real kitchens across the United States. These scenes capture a wide spectrum of layouts, object configurations, and visual variations, providing realistic contexts for a variety of everyday tasks.
 
-PublishedasaconferencepaperatICLR2026
-| Activity | Task | # MoMa Description |
-| -------- | ---- | ------------------ |
-Sub- req.
-tasks
-DeliverStraw Takeastrawfromthedrawerinfrontandplace
-| Servingbeverages |     | 4 Yes |
-| ---------------- | --- | ----- |
-itinsidetheglasscuponthediningcounter.
-Startthetoaster.Oncetheleverpopsup,takethe
-| Toastingbread | GetToastedBread | 4 Yes |
-| ------------- | --------------- | ----- |
-breadtotheplateonthediningcounter.
-Pickthekettlefromthecounterandplaceitona
-| Brewing | KettleBoiling | 2 No |
-| ------- | ------------- | ---- |
-stoveburner.Thenturntheburneron.
-Pickuptheitemsfromthecounter,placethemin
-| Loading | LoadDishwasher | 3 No |
-| ------- | -------------- | ---- |
-thedishwasher,andclosethedishwasherdoor.
-dishwasher
-Placetwoidenticalitemsofeachobjectineach
-Packinglunches PackIdentical 15 Yes tupperwareonthenearbycounter,topacktwo
-Lunches identicallunches.
-PreSoakPan Pickthepanandspongeandplacethemintothe
-| Washingdishes |     | 3 No |
-| ------------- | --- | ---- |
-sink.Thenturnonthewater.
-Pickthemugfromthecabinet,placeitunderthe
-Brewing PrepareCoffee 2 No coffeemachinedispenser,andpressthestart
-button.
-Turnonthesinkandmanueverthespouttowash
-| Cleaningsink | RinseSinkBasin | 2 No |
-| ------------ | -------------- | ---- |
-alllocationsofthesinkbasin.
-Pickupthespongefromthecounterandclean
-thecuttingboardbybrieflyscrubbingor
-| Sanitizingcutting | ScrubCutting | 2 Yes |
-| ----------------- | ------------ | ----- |
-pressingdownonthecuttingboard.Once
-| boards | Board |     |
-| ------ | ----- | --- |
-finished,releasethesponge.
-Grabthepanfromthecabinetandplaceitonthe
-[burnerlocation]burneronthestove.Then
-| Frying | SearingMeat | 3 Yes |
-| ------ | ----------- | ----- |
-placetheitemonthestoveandturntheburner
-on.
-Pickuptheknifefromthedrawerandplaceiton
-Slicingmeat SetUpCutting 2 Yes thecuttingboard.Thenplacethemeatfromthe
-Station platetothecuttingboard.
-Pickupthebowlsonthecounterandstackthem
-Organizingdishes StackBowls 2 Yes ontopofoneanotherintheopencabinet.Place
-| andcontainers | Cabinet | thesmallerbowlontopofthelargerbowl. |
-| ------------- | ------- | ----------------------------------- |
-Picktheitemfromthesinkandplaceitinthe
-bowl.Thenpickthebowlandplaceitinthe
-| Steamingfood | SteamIn | 6 Yes |
-| ------------ | ------- | ----- |
-microwave.Thenclosethemicrowavedoorand
-Microwave
-pressthestartbutton.
-Puttheitemsinthepot.Retrievethespatulaand
-| Sauteing | StirVegetables | 4 Yes |
-| -------- | -------------- | ----- |
-lightlystirthevegetablesinthepot.
-vegetables
-Pickthechickendrumstickanditemfromtheir
-Storingleftovers StoreLeftovers 5 Yes platesandplacetheminthebowl.Thenputthe
-InBowl bowlinthefridge.
-Washthelettuceinthesinkbyrunningwater
-| Makingsalads | WashLettuce | 2 No |
-| ------------ | ----------- | ---- |
-overit.
-Figure8:Post-trainingComposite-SeenTasks(16)
-19
+Large-scale data: The benchmark provides over 2,000 hours of robot interaction data. This includes 612 hours of human demonstration data and an additional 1615 hours of synthetic demonstration data using the MimicGen data generation tool ([Mandlekar et al., 2023](#bib.bib9)) to significantly expand the quantity of data.
 
-PublishedasaconferencepaperatICLR2026
-| Activity | Task | # MoMa Description |
-| -------- | ---- | ------------------ |
-Sub- req.
-tasks
-Openthecabinet,pickuptheitemfromthecabinetand
-Settingthetable ArrangeBread 5 Yes placeitinthebasket.Thenmovethebaskettothe
-Basket diningcounter.
-Pickthekettlefromthecounterandplaceitonthetray.
-Brewing ArrangeTea 3 No Thenpickthemugfromthecabinetandplaceitonthe
-tray.Thenclosethecabinetdoors.
-Fromthedifferenttypesofpastriesonthecounter,
-selectacroissantandplaceitonthecuttingboard.
-| Makingtoast | Bread | 2 Yes |
-| ----------- | ----- | ----- |
-Thenretrieveajarofjamfromthecabinetandplaceit
-Selection
-alongsidethecroissantonthecuttingboard.
-Puttheshakerandcondimentbottlefromthecounter
-| Arranging | Categorize | 2 No |
-| --------- | ---------- | ---- |
-nexttotheircounterpartsinthecabinet.
-| condiments | Condiments |     |
-| ---------- | ---------- | --- |
-Placetheappropriatecuttingtoolforcuttingtheitem
-| Chopping | CuttingTool | 2 No |
-| -------- | ----------- | ---- |
-skinonthecuttingboard.
-| vegetables | Selection |     |
-| ---------- | --------- | --- |
-Takethestrawberryfromthefridgeandplaceitontop
-| Garnishing | Garnish | 4 Yes |
-| ---------- | ------- | ----- |
-ofthepancake,locatedonthediningcounter.
-| dishes | Pancake |     |
-| ------ | ------- | --- |
-Gatherallobjectsintoonecabinetandsorttheglasses
-| Arranging | Gather | 4 Yes |
-| --------- | ------ | ----- |
-andbowlstooppositesides.
-| cabinets | Tableware |     |
-| -------- | --------- | --- |
-Pickupthekebabskewerandbaguettebread,andplace
-Preparing HeatKebab 6 Yes theminsidethetoasteroven.Closethetoasteroven
-| sandwiches | Sandwich | doorandstartbysettingthetimer. |
-| ---------- | -------- | ------------------------------ |
-Grabalemonwedgefromthefridgeandoneicecube
-Addingiceto MakeIce 5 Yes fromtheicebowl,andputthemintheglassof
-| beverages | Lemonade | lemonade. |
-| --------- | -------- | --------- |
-PanTransfer Pickupthepananddumpthevegetablesinitontothe
-| Servingfood |     | 3 No |
-| ----------- | --- | ---- |
-plate.Thenreturnthepantothestove.
-Placeonebunandonesausagefromthebowloneach
-| Portioning | PortionHot | 4 Yes |
-| ---------- | ---------- | ----- |
-plate.
-| meals | Dogs |     |
-| ----- | ---- | --- |
-Movetheplasticbottlesinthemiddletotheplastics
-Organizing Recycle 3 Yes group,andtheglassbottlesinthemiddletotheglass
-| recycling | BottlesBy | group. |
-| --------- | --------- | ------ |
-Type
-Takethemeatcontainerthathasthemeatitem(s)and
-placeitonthesecondhighestrackofthefreezer.Then
-| Managing | Separate | 7 Yes |
-| -------- | -------- | ----- |
-takethevegetablecontainerthathasthevegetable(s)
-| freezerspace | FreezerRack |     |
-| ------------ | ----------- | --- |
-andplaceitonthehighestrackofthefreezer.
-Openthemicrowave,placethebowlwithwaffleinside
-Reheatingfood WaffleReheat 4 Yes themicrowave,thenclosethemicrowavedoorandturn
-iton.
-Putthecolanderinthesink,puttheiteminthe
-WashFruit
-| Washing |     | 4 No colander,andturnonthesinkfaucetandpourwater |
-| ------- | --- | ------------------------------------------------ |
-Colander
-produce overthecolander.
-Picktheitemandplaceitonthedigitalscalefor
-| Measuring | Weigh | 2 No |
-| --------- | ----- | ---- |
-weighing,andclosethecabinet.
-| ingredients | Ingredients |     |
-| ----------- | ----------- | --- |
-Figure9:Post-trainingComposite-UnseenTasks(16)
-20
+Systematic benchmarking: RoboCasa365 supports rigorous evaluation across three learning settings: massively multi-task training, foundation model training, and lifelong learning. The benchmark is designed to facilitate reproducible, large-scale experiments and in-depth analysis of which data and environment factors most strongly influence generalization.
 
-PublishedasaconferencepaperatICLR2026
-Figure10: CameraImages. Cameraimagesfromthreeviews(renderedat256×256resolutionarefedinto
-themodel.)
-F DATASETS
-WepresentanoverviewofourdatasetsinTable7.
-Setting NumTasks NumScenes DemosperTask DatasetSize(hrs)
-Pretraining(Human) 300 2500 100 404
-Pretraining(MimicGen) 60 2500 10,000 1615
-Target(Human) 50 10 500 208
-Table7:Datasetstatisticsacrosspretrainingandtargetsettings.
-Foreachdemonstration,westorethelanguageinstruction,proprioceptiveinformation(robotbase
-pose,robotendeffectorpose,gripperstateinformation),imagesfromthreecameras(wristcamera,
-leftthird-personcamera,rightthird-personcamera),andtheactions.
-G POLICY LEARNING
-G.1 MODELARCHITECTURESANDTRAININGPROTOCOL
-Ourexperimentsfocusontrainingvision-basedmodels. Themodeltakesasinputacombinationof
-low-levelproprioceptiveinformation(basepose,endeffectorpose,gripperstate),taskinstruction
-language,andcameraimages(onewristcameraimageandtwothird-personcameraimages).
-Eachofthecameraimagesisat256×256resolution,andweshowexamplesofthecameraviews
-inFigure10.
-Weexperimentwithfourmodels:
-DiffusionPolicy. DiffusionPolicymodelstrajectorygenerationasaconditionaldenoisingprocess
-inactionspace,recoveringactionsfromnoisyexperttrajectoriestohandlemulti-modalrobot
-behaviors. Weuseanopensourcediffusionpolicycodebaseandaddlanguageconditioningby
-fusingCLIP-basedlanguageembeddings(Radfordetal.,2021)withtheResNetvisualencodervia
-FiLMconditioninglayers(Perezetal.,2018). Weusethetransformerdiffusionvariant,witha
-12-layertransformerwithanembeddingdimensionof512. Wetrainthemodelwithabatchsizeof
-192andtrainfor250kstepsforthemulti-tasklearningexperiment.
-π /π .π andπ arevision-language-actionmodelswhichusePaLIGemma(Beyeretal.,
-0 0.5 0 0.5
-2024)astheunderlyingVLMandfusesanactionexperttooutputrobotactionsviaflow
-matching(Lipmanetal.,2023). Weusetheofficialopensourcerepository. Weusethedefaultfull
-fine-tuningconfiguration,andweuseabatchsizeof64(thehighestbatchsizewecanfitona
-GH200GPU).Forthemulti-tasklearningexperiment,wetrainthemodelfor75ksteps(48hours
-oftrainingtimeonaGH200GPU).
-GR00TN1.5. GR00TN1.5isavision-language-actionmodelwhichusesasystem1-system2
-architecture,withtheEagle2VLM(Lietal.,2025)servingasthehigh-levelencoder(system2)and
-21
+By integrating these elements, RoboCasa365 provides a large, diverse, and systematically structured resource for studying generalist robots in simulation. It enables researchers to explore algorithms, run reproducible evaluations, and analyze the impact of task and environment diversity on policy generalization. Using RoboCasa365, we conduct extensive experiments to compare state-of-the-art methods, evaluate learning strategies, and investigate the factors that most strongly drive performance in generalist robot learning.
 
-PublishedasaconferencepaperatICLR2026
-anactiondecodertoproduceactionsviaflowmatching(system1). Weusetheofficialopensource
-repository. Forallexperiments,wefreezethevisionencoderandlanguageencoder(whicharethe
-defaultsettingsfromtheopensourcecodebase),andweuseabatchsizeof128(thehighestbatch
-sizewecanfitonaGH200GPU).Forthemulti-tasklearningexperiments,wetrainfor120ksteps.
-Forthefoundationmodeltrainingexperiments,wepretrainfor80kstepsandfine-tuneontarget
-datafor60ksteps. Finally,forlifelonglearningexperiments,wetrainstage1for100ksteps,
-followedby60kstepsforallsubsequentstagesoftraining. Generally,wefindthesesettingstobe
-sufficienttoallowformodelconvergence.
-G.2 EVALUATIONPROTOCOL
-Aftertraining,weevaluatethemodelataspecifiedcheckpointonasuiteofevaluationtasks. For
-eachevaluationtask,werun30trialsforaspecifiedmaximumnumberoftimesteps(themaximum
-durationistask-dependent). Ifduringthisdurationtheagentachievesthetasksuccesscondition
-(binarycondition),theepisodeiscountedasasuccess;otherwise,afailure. Wereporttheaverage
-successrateacrosstasks.
-H ADDITIONAL EXPERIMENTS
-H.1 PRETRAININGSCENEDIVERSITY
-Ourpretrainingdataspans2,500kitchenscenes(50layouts×50styles),andwecompareto
-restrictingpretrainingdatato25scenes(5layouts×5styles),and5scenes(5layouts×1style).
-Torunafaircomparisonacrossthesesettings,weuseMimicGentogeneratedemonstrationsfor
-eachsetting,generatingdataacross17atomictasksinpretrainingkitchens. Werunzero-shot
-evaluationsonthe10fixedtargetkitchenscenes,andalsotrylearningontheatomictargetdata
-with50demonstrationspertask. SeeTable8forresults. Forzero-shotevaluation,weobserve
-notableperformancegainsasthenumberofpretrainingscenesincreases. Thesegainsalsoholdin
-subsequenttargettaskfine-tuning,highlightingtheneedfordiversepretrainingdata.
-PretrainingData
-5Scenes 25Scenes 2500Scenes
-Zero-shotEvaluation 29.6 39.6 44.7
-+Fine-tuningonAtomicTargetData(10%) 53.3 56.7 62.4
-Table8:Pretrainingscenediversityresults.Increasingthecompositionofscenesinpretrainingdataimproves
-downstreamtaskperformance.
-H.2 ROBUSTNESSEVALUATIONS
-Inordertoexaminethegeneralizationcapabilitiesendowedbypretrainingonourdata,weperform
-asetofrobustnessevaluationsontheGR00TN1.5modeltrainedonthefullpretrainingandtarget
-mixture. Weperturbanaspectofthemodel’sinputandevaluateitonourComposite-Seenand
-Composite-Unseentasks. Specifically,welookatthefollowingperturbations:
-• NovelLanguage: WepromptanLLMfornovelbutsemanticallysimilartaskinstructions.
-• NovelJointAngles: WesampleGaussiannoiseandaddittothestartingjointanglesof
-therobot.
-• NovelBasePose: WesampleGaussiannoiseandaddittothestartingpositionandyawof
-therobotbase.
-• NovelCameraPose: WesampleGaussiannoiseandaddittothedefaultthird-personand
-wristcameraposes.
-Wefindthatthemodelisrobusttolanguagevariations,butcansufferfromnovelcameraposes,
-jointangles,andbaseposes.
-22
+## 2 Related Work
 
-PublishedasaconferencepaperatICLR2026
-Table9:Evaluationofrobustnessunderdifferentperturbations.
-TaskSplit NoPerturbation NovelLanguage CameraPerturbations InitialJointNoise InitialBasePoseNoise
-| Composite-Seen   | 40.6 | 38.3 | 28.8 |     | 27.9 | 31.2 |
-| ---------------- | ---- | ---- | ---- | --- | ---- | ---- |
-| Composite-Unseen | 42.1 | 39.2 | 31.5 |     | 32.1 | 30.2 |
-H.3 JOINTCO-TRAININGOFPRETRAININGANDTARGETDATA
-Asanextensiontothefoundationmodeltrainingexperiments,weexamineaseparatevariantin
-whichwetrainonallpre-trainingdataand100%ofthetargetdatajointlyinonesinglephase. We
-trainedthemodelfor120kstepsandreporttheresultingtasksuccessratesinthetargetkitchensas
-follows:
-| • Atomic-Seen:      | 44.1% |       |     |     |     |     |
-| ------------------- | ----- | ----- | --- | --- | --- | --- |
-| • Composite-Seen:   | 9.0%  |       |     |     |     |     |
-| • Composite-Unseen: |       | 11.7% |     |     |     |     |
-| • Average: 22.5%    |       |       |     |     |     |     |
-Comparedtoourtwo-stagelearningframework(pretrainingfirst,followedbyfine-tuningontarget
-data),performanceunderthisco-trainingregimeissubstantiallylower. Thisresultunderscoresthe
-importanceofadedicatedfine-tuningphaseforlearninghighlyperformantpoliciestailoredtothe
-targettasks.
-H.4 LORAFINE-TUNING
-Forthemulti-tasklearningexperimentsinsection4.2,weranGR00TN1.5withLoRAfine-tuning,
-trainedforthesamenumberofsteps,batchsize,etc,asthefullfine-tuningvariant. Theresultsare
-asfollows:
-Table10:Policysuccessrates(%)comparingfullvsLoRAfine-tuningforGR00TN1.5.
-|                 | Atomic-Seen | Composite-Seen |     | Composite-Unseen |     | Average |
-| --------------- | ----------- | -------------- | --- | ---------------- | --- | ------- |
-| Fullfine-tuning | 43.0        |                | 9.6 |                  | 4.4 | 20.0    |
-| LoRAfine-tuning | 2.4         |                | 0.2 |                  | 0.8 | 1.2     |
-Fullfine-tuningiscriticaltomodelperformance.
-| I ADDITIONAL | ANALYSIS |     |     |     |     |     |
-| ------------ | -------- | --- | --- | --- | --- | --- |
-I.1 FOUNDATIONMODELTRAININGANALYSIS
-Webreakdowntheper-tasktaskperformanceforthebestperformingvariant,pretrainingfollowed
-byfine-tuningontargetdata(on100%ofdata),inTable11. AmongtheAtomic-Seentasks,the
-worst-performingtasksareTurnOffStoveandCloseBlenderLid,whichinvolvehigh
-precisionanddexterity. However,forComposite-SeenandComposite-Unseentasks,the
-worst-performingtasksspanmanydiversecharacteristics. Werunaqualitativeanalysis,outlining
-commonfailuremodesforthetaskswherethemodelperformsata30%orlesssuccessrate:
-• SteamInMicrowave: difficultyplacingthebowlinthemicrowave,eitherplacingon
-theedgeofthemicrowaveordroppingthebowlintheairrightbeforeplacingitinthe
-microwave
-• SearingMeat: typicallydoesnotturnonthestoveburnercorrectly,orattemptstoturn
-ontheincorrectstoveburner;ordoesnotplacethepanonavalidlocationonthestovetop
-| • PackIdenticalLunches: |     | unreliablepickingfromfridge;notmovingtothe |     |     |     |     |
-| ----------------------- | --- | ------------------------------------------ | --- | --- | --- | --- |
-tupperwaretoplaceitems;placingitemsinwrongtupperware
-• PrepareCoffee: oftendoesnotplacethecoffeemugcorrectlyunderthecoffee
-machine
-23
+Robot Simulation Frameworks.
+There is a long line of prior work on building robot simulation frameworks ([Zhu et al., 2020](#bib.bib5); [Gu et al., 2023](#bib.bib8); [Mittal et al., 2023](#bib.bib25); [Tao et al., 2025](#bib.bib29); [Szot et al., 2021](#bib.bib13); [Kolve et al., 2017](#bib.bib12); [Li et al., 2023](#bib.bib14); [Li et al., 2024](#bib.bib30); [Liu et al., 2023](#bib.bib15); [Deitke et al., 2022](#bib.bib38)).
+Some are focused on tabletop settings ([Zhu et al., 2020](#bib.bib5); [Liu et al., 2023](#bib.bib15); [Li et al., 2024](#bib.bib30); [James et al., 2020](#bib.bib3)), while we focus on simulating entire room-scale scenes, similar to some other prior works ([Li et al., 2023](#bib.bib14); [Nasiriany et al., 2024](#bib.bib19); [Szot et al., 2021](#bib.bib13); [Kolve et al., 2017](#bib.bib12)).
+Our work is unique in that it features hundreds of tasks across thousands of unique scenes, large-scale, high-quality demonstration datasets, and a suite of benchmarks for training and evaluating generalist robot models.
+To our best knowledge, our work is the first simulation framework to satisfy all of these criteria.
 
-PublishedasaconferencepaperatICLR2026
-• DeliverStraw: rangeoffailures: difficultyopeningdrawers,difficultytransporting
-straw(droppingit),difficultyplacingstrawintocup
-• GetToastedBread: oftendoesnotpressdownonleverfully;sometimespressesdown
-leverbutthenactsrandomly
-• PortionHotDogs: unreliablepicksfromcrowdedbowl;unreliableplacebyplacing
-itemoncounterinsteadofplate;placingitemsonthewrongplate
-• PanTransfer: generallypicksupthepanbutdoesnotreliablyflipthecontentsofthe
-panintotheplate;thisisadynamictaskthat’squiteunique,doesnothavemuchoverlap
-withothertasksinthebenchmark
-• HeatKebabSandwich: oftenfailstopulloutthetoasterrack;othertimesoftenafter
-placingthefirstitemontherackinadvertentlypushestherackinbyaccidentanddoesnot
-placetheseconditemin
-• CategorizeCondiments: pickandplaceisnotreliable,ordoesnotplacematching
-condimentsnexttoeachother
-• SeparateFreezerRack: oftenfailstoreliablyplacethetupperwareintothefreezer,
-asthefreezerisatightspace
-• GatherTableware: mustlocatetheothermugfromthekitchen,andbringitback;the
-navigationabilityhereisnotreliable;alsosometimesdoesnotplacethemuginsidethe
-cabinet,dropsitintheairwithoutreachingfarintothecabinet.
-24
+Datasets and Benchmarks for Generalist Robots.
+There have been numerous efforts towards collecting large robot datasets in the real world ([Brohan et al., 2022](#bib.bib7); [Walke et al., 2023](#bib.bib27); [Khazatsky et al., 2024](#bib.bib16); [Open X-Embodiment Collaboration and others, 2023](#bib.bib11)).
+Evaluating and benchmarking policies trained on these datasets in the real world is challenging due to the resources needed to run large-scale systematic evaluations, despite several recent approaches towards this goal ([Atreya et al., 2025](#bib.bib26); [Zhou et al., 2023](#bib.bib40); [Yenamandra et al., 2023](#bib.bib41); [Zhou et al., 2025](#bib.bib42); [Krotkov et al., 2016](#bib.bib43); [Correll et al., 2018](#bib.bib44)).
+Simulation enables running large-scale benchmarks.
+However, most simulation benchmarks are confined to a very narrow distribution of tasks and environments ([Mandlekar et al., 2021](#bib.bib1); [Zhu et al., 2020](#bib.bib5); [Liu et al., 2023](#bib.bib15); [TRI LBM Team et al., 2025](#bib.bib28)).
+ [Li et al. (2023)](#bib.bib14) bring forth some of the largest diversity of environments and tasks to date, but lack accompanying large-scale datasets for all of these tasks.
+ [Nasiriany et al. (2024)](#bib.bib19) include 100k demonstrations spanning 30 tasks and 100 scenes.
+In contrast, our datasets comprise over 500k demonstrations across over 300 tasks and 2500 unique scenes.
+While prior work focuses on benchmarking specific methods such as multi-task training ([TRI LBM Team et al., 2025](#bib.bib28); [Nasiriany et al., 2024](#bib.bib19)) and lifelong learning ([Liu et al., 2023](#bib.bib15)), we provide a comprehensive suite of benchmarks to systematically study multi-task training, foundation model training, and lifelong learning.
 
-PublishedasaconferencepaperatICLR2026
-| Task | SuccessRate(%) | Stages MoMaRequired |     |
-| ---- | -------------- | ------------------- | --- |
-Atomic-Seen
-| TurnOnElectricKettle      | 93  | 1   | No  |
-| ------------------------- | --- | --- | --- |
-| OpenStandMixerHead        | 90  | 1   | No  |
-| CloseToasterOvenDoor      | 87  | 1   | No  |
-| OpenCabinet               | 87  | 1   | No  |
-| SlideDishwasherRack       | 87  | 1   | No  |
-| PickPlaceToasterToCounter | 73  | 1   | No  |
-| TurnOnMicrowave           | 70  | 1   | No  |
-| OpenDrawer                | 70  | 1   | No  |
-| PickPlaceSinkToCounter    | 70  | 1   | No  |
-| PickPlaceCounterToStove   | 70  | 1   | No  |
-| CloseFridge               | 67  | 1   | No  |
-| TurnOnSinkFaucet          | 63  | 1   | No  |
-| PickPlaceCounterToCabinet | 63  | 1   | No  |
-| CoffeeSetupMug            | 60  | 1   | No  |
-| NavigateKitchen           | 60  | 1   | Yes |
-| PickPlaceDrawerToCounter  | 50  | 1   | No  |
-| TurnOffStove              | 37  | 1   | No  |
-| CloseBlenderLid           | 37  | 1   | No  |
-Composite-Seen
-| StackBowlsCabinet    | 83  | 2   | Yes |
-| -------------------- | --- | --- | --- |
-| PreSoakPan           | 70  | 3   | No  |
-| ScrubCuttingBoard    | 70  | 2   | Yes |
-| WashLettuce          | 67  | 2   | No  |
-| RinseSinkBasin       | 60  | 2   | No  |
-| KettleBoiling        | 53  | 2   | No  |
-| LoadDishwasher       | 47  | 3   | No  |
-| StoreLeftoversInBowl | 43  | 5   | Yes |
-| SetUpCuttingStation  | 33  | 2   | Yes |
-| StirVegetables       | 33  | 4   | Yes |
-| SteamInMicrowave     | 30  | 6   | Yes |
-| SearingMeat          | 27  | 3   | Yes |
-| PackIdenticalLunches | 17  | 15  | Yes |
-| PrepareCoffee        | 13  | 2   | No  |
-| DeliverStraw         | 3   | 4   | Yes |
-| GetToastedBread      | 0   | 4   | Yes |
-Composite-Unseen
-| RecycleBottlesByType | 87  | 3   | Yes |
-| -------------------- | --- | --- | --- |
-| WaffleReheat         | 83  | 4   | Yes |
-| ArrangeBreadBasket   | 77  | 5   | Yes |
-| WeighIngredients     | 67  | 2   | No  |
-| BreadSelection       | 60  | 2   | Yes |
-| CuttingToolSelection | 47  | 2   | No  |
-| GarnishPancake       | 47  | 4   | Yes |
-| ArrangeTea           | 43  | 3   | No  |
-| WashFruitColander    | 40  | 4   | No  |
-| MakeIceLemonade      | 40  | 5   | Yes |
-| PortionHotDogs       | 23  | 4   | Yes |
-| PanTransfer          | 20  | 3   | No  |
-| HeatKebabSandwich    | 13  | 6   | Yes |
-| CategorizeCondiments | 10  | 2   | No  |
-| SeparateFreezerRack  | 10  | 7   | Yes |
-| GatherTableware      | 7   | 4   | Yes |
-Table11:FoundationModelTrainingResults.
-25
+Training Generalist Robots.
+There is a long body of work on learning generalist robot policies from large, diverse robot datasets ([Octo Model Team et al., 2024](#bib.bib31); [Open X-Embodiment Collaboration and others, 2023](#bib.bib11); [NVIDIA et al., 2025](#bib.bib22); [Brohan et al., 2023](#bib.bib34); [Kim et al., 2024](#bib.bib32); [Shukor et al., 2025](#bib.bib33); [Wen et al., 2025](#bib.bib35)).
+In our work, we aim to be agnostic to the choice of model, and instead create benchmarks to systematically assess the capabilities of these models across distinct settings, including multi-task training, pretraining, and fine-tuning on target data, and lifelong learning.
+
+## 3 RoboCasa365: Large-Scale Simulation of 365 Everyday Tasks
+
+We present RoboCasa365, a large-scale simulation framework for training and benchmarking generalist robots.
+We use the existing RoboCasa simulation framework ([Nasiriany et al., 2024](#bib.bib19)) as the starting ground for RoboCasa365 and make significant efforts to scale up the assets, environments, tasks, and datasets.
+We also establish a rigorous benchmark to study state-of-the-art policy learning methods, which we outline in Section [4](#S4 "4 Experiments ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+In the following sections, we outline the components of this simulation framework: assets, scenes, tasks, and datasets.
+
+### 3.1 Expanding the Scope of Assets
+
+RoboCasa features a diverse array of objects, interactable fixtures, and appliances, with a focus on common tasks in kitchen environments.
+We use the existing library of 2,509 objects from [Nasiriany et al. (2024)](#bib.bib19), spanning 153 object categories.
+In addition to these, we source an additional collection of high-quality 3D assets spanning 57 object categories.
+These are high-quality 3D assets sourced from artists and edited to preserve strict quality standards.
+We use these new objects to support new tasks and to populate various areas of kitchen scenes generally.
+We provide a complete inventory in Appendix [C.1](#A3.SS1 "C.1 3D objects ‣ Appendix C Simulation Assets ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+
+In addition to the 3D assets, we significantly expand the repertoire of interactable fixtures and appliances in the kitchen environment.
+RoboCasa ([Nasiriany et al., 2024](#bib.bib19)) includes a total of 20 interactable fixtures and appliances across 4 categories: sinks, coffee machines, stoves, and microwaves.
+We significantly expand the scope of these assets to 456 instances spanning 12 categories.
+We include new categories of appliances, such as toasters, toaster ovens, stand mixers, blenders, and electric kettles.
+All of these appliances are articulated, including fridges, ovens, and dishwashers, which were not previously articulated under RoboCasa.
+We model these assets using the same format as RoboCasa, as MJCF objects with annotations of the regions.
+For each category, we include between 20 and 50 instances in order to ensure that there is sufficient diversity to support generalization to novel instances.
+We provide a complete inventory of our fixtures and appliances in Appendix [C.2](#A3.SS2 "C.2 Interactive fixtures and appliances ‣ Appendix C Simulation Assets ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+
+![Refer to caption](2603.04356v1/Robocasa365_Scenes_v6.png)
+
+Figure 2: Kitchen Scenes. Our simulation framework features 2,500 distinct kitchen scenes for pretraining (top, representative samples shown), and 10 distinct target kitchen scenes (bottom, all scenes shown).
+
+### 3.2 Diverse Kitchen Scenes
+
+Achieving generalization in robot learning requires exposure to a wide range of training environments; we address this need by providing thousands of diverse kitchen scenes spanning a broad spectrum of household settings.
+We categorize these scenes into pretraining and target splits.
+Our goal is to use the pretraining kitchen scenes for large-scale data collection and synthetic data generation pipelines; we use the target kitchen scenes for targeted data collection and for running most of our experiment evaluations.
+Using the terminology from [Nasiriany et al. (2024)](#bib.bib19), we define each kitchen scene as a combination of layout and style, where the layout defines the floor plan, and the style defines the specific selection of fixtures, appliances, and textures used in the kitchen.
+We can configure each kitchen scene to use any combination of layout and scene.
+
+For our target kitchens, we use the 10 layouts and 10 styles defined by [Nasiriany et al. (2024)](#bib.bib19) in RoboCasa, where each layout is matched with a specific style, for a total of 10 kitchen scenes.
+For our pretraining kitchen scenes, we create 50 distinct new layouts.
+In order to capture the distribution of diverse scenes, we source our kitchens from 50 real-world homes with active listings on Zillow.com, a real estate marketplace.
+These homes span diverse geographic locations across the United States.
+We build digital cousin ([Dai et al., 2024](#bib.bib20)) replicas for each of these environments, making sure to match the floor plan as closely as possible.
+In addition to these layouts, we create 50 distinct styles.
+We ensure that the pretraining and target styles do not overlap in the selection of the fixtures, appliances, or environment textures used.
+Together, we have a total combination of 50 layouts ×\times 50 styles, for a total of 2,500 pretraining kitchen scenes.
+We provide an overview of the pretraining and target kitchen scenes in Figure [2](#S3.F2 "Figure 2 ‣ 3.1 Expanding the Scope of Assets ‣ 3 RoboCasa365: Large-Scale Simulation of 365 Everyday Tasks ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+
+### 3.3 Suite of 365 Everyday Tasks
+
+We aim to provide a diverse set of tasks to support sharing knowledge across tasks and generalizing to new tasks.
+ [Nasiriany et al. (2024)](#bib.bib19) define two broad categories of tasks: atomic tasks, which represent the execution of a single skill, and composite tasks, which involve executing a sequence of skills.
+ [Nasiriany et al. (2024)](#bib.bib19) define eight foundational skills: (1) pick-and-place, (2) opening and closing doors, (3) opening and closing drawers, (4) turning levers, (5) turning knobs, (6) pressing buttons, (7) insertion, and (8) navigation.
+We adopt these skills as the basis for our atomic tasks. In addition to the 25 atomic tasks in RoboCasa, we create an additional set of 40 new atomic tasks to support various new appliances and new behaviors afforded by our simulator.
+We provide the entire list of 65 atomic tasks in Appendix [E.1](#A5.SS1 "E.1 Atomic Tasks ‣ Appendix E Tasks ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+
+For our composite tasks, we follow the framework established by [Nasiriany et al. (2024)](#bib.bib19), where we use large language models to solicit task blueprints.
+The process follows two stages.
+First, we prompt LLMs to give a list of activities representing high-level groups of tasks in kitchen environments.
+We retrieve a list of the top 60 activities, such as boiling water, toasting bread, brewing coffee, washing dishes, and storing leftovers, to name a few.
+For each activity, we then prompt the LLM to provide task blueprints, which consist of the name of the task, a high-level description of the task, the objects and fixtures involved, and the sequences of skills needed to solve the task.
+We then proceed to write code for the tasks based on these blueprints.
+We use 83 of the existing composite tasks from RoboCasa and generate an additional set of 217 new composite tasks, for a total of 300 composite tasks.
+We outline the full list of activities and representative composite tasks in Figure [3](#S3.F3 "Figure 3 ‣ 3.3 Suite of 365 Everyday Tasks ‣ 3 RoboCasa365: Large-Scale Simulation of 365 Everyday Tasks ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+In total, our benchmark includes 365 everyday tasks: 65 atomic tasks and 300 composite tasks.
+Out of these, 220 require mobile manipulation, while 145 can be performed without mobility.
+
+![Refer to caption](2603.04356v1/Figure3_final.png)
+
+Figure 3: Composite Tasks. RoboCasa365 features 300 composite tasks that involve a sequence of skills. We use large language models to generate a set of high-level activities, and for each activity, a set of task blueprints. There are 6 activity families (high-level categories) spanning 60 activities, which organize composite tasks based on shared functional and semantic structure. Representative tasks are shown for selected activities.
+
+### 3.4 Datasets
+
+We provide a large collection of robot datasets covering all of our tasks.
+Broadly, our datasets are divided into two categories: pretraining datasets for data from the pretraining scenes, and target datasets from the target scenes.
+
+#### 3.4.1 Pretraining datasets
+
+Out of the 365 total tasks outlined in Section [3.3](#S3.SS3 "3.3 Suite of 365 Everyday Tasks ‣ 3 RoboCasa365: Large-Scale Simulation of 365 Everyday Tasks ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"), our pretraining data covers 300 tasks, with 65 atomic tasks and 235 composite tasks.
+For each of these 300 tasks, we collect 100 human demonstrations per task via robot teleoperation.
+This results in 30k human demonstrations total for pretraining.
+For our data collection, we use the Franka Panda Emika robot, equipped with an Omron mobile base ([Haviland et al., 2022](#bib.bib17)), and in principle, our simulation framework can support data collection with other mobile manipulators and humanoid platforms.
+
+We also use the MimicGen generation system ([Mandlekar et al., 2023](#bib.bib9)) to generate large-scale synthetic data across 60 atomic tasks.
+For each task, we use the 100 human demonstrations previously collected as seed demonstrations, and generate 10k demonstrations, effectively scaling data 100×\times.
+
+#### 3.4.2 Target datasets
+
+For our target data, we choose 50 representative ones out of the 365 tasks, grouped into three splits:
+
+* •
+
+  Atomic (18 tasks): We include 18 representative tasks out 65 total atomic tasks in the benchmark.
+* •
+
+  Composite-Seen (16 tasks): We choose 16 representative composite tasks spanning 16 activities. These include a mix of short and long-horizon tasks, with some involving 2 subtasks and the longest task involving 15 subtasks.
+* •
+
+  Composite-Unseen (16 tasks): To test the effect of our pretraining data, we also choose 16 composite tasks that are unseen in the pretraining data. These tasks are of similar difficulty to the composite seen tasks, but focus on another distinct set of 16 activities.
+
+We list the entire set of 50 target tasks in Appendix [E.2](#A5.SS2 "E.2 Target tasks ‣ Appendix E Tasks ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+For each of these tasks, we collect 500 human demonstrations via robot teleportation, for a total of 25k demonstrations.
+
+#### 3.4.3 Dataset statistics
+
+We provide a high-level overview of our datasets in Appendix [F](#A6 "Appendix F Datasets ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+Our pretraining synthetic demonstration dataset spans the highest amount of data, with 1615 total hours, followed by human pretraining data (404 hours), and then human target data (208 hours).
+In Figure [4(a)](#S3.F4.sf1 "Figure 4(a) ‣ Figure 4 ‣ 3.4.3 Dataset statistics ‣ 3.4 Datasets ‣ 3 RoboCasa365: Large-Scale Simulation of 365 Everyday Tasks ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots") we report the distribution over the number of subtasks required for each of our 365 tasks.
+Most tasks require one or two subtasks, but there are a few tasks that require 15 or more subtasks to complete.
+In Figure [4(b)](#S3.F4.sf2 "Figure 4(b) ‣ Figure 4 ‣ 3.4.3 Dataset statistics ‣ 3.4 Datasets ‣ 3 RoboCasa365: Large-Scale Simulation of 365 Everyday Tasks ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"), we report the distribution of episode lengths across all pretraining and target human data (55k episodes).
+The majority of episodes range from 10 to 60 seconds, with a long tail end for longer horizon episodes, some going beyond 3 minutes.
+
+(a) Distribution of required subtasks per task.
+
+(b) Distribution of demonstration lengths.
+
+Figure 4: Distribution of task lengths (by number of subtasks) and dataset episode lengths (by number of seconds). We observe a long tail of tasks and data representing long-horizon behaviors.
+
+## 4 Experiments
+
+In our experiments, we conduct a systematic study to understand the key factors that influence training generalist robot policies. To this end, we design a comprehensive suite of benchmarks aimed at answering the following questions:
+
+1. 1.
+
+   How well do generalist robot models perform when trained on large multi-task datasets?
+2. 2.
+
+   What role does pretraining data play, and to what extent can it improve learning of downstream tasks?
+3. 3.
+
+   How effectively can we learn new tasks in lifelong learning settings?
+4. 4.
+
+   How does the scope and composition of pretraining data impact learning downstream tasks?
+
+### 4.1 Multi-task training
+
+We begin by investigating how state-of-the-art methods perform when trained on massively multi-task datasets. This evaluation is a critical step toward developing generalist robots that can not only master a wide range of behaviors but also adapt to entirely novel tasks beyond their training data.
+
+We train language-conditioned vision-based policies on the mixture of 300 pretraining human datasets outlined in Section [3.4.1](#S3.SS4.SSS1 "3.4.1 Pretraining datasets ‣ 3.4 Datasets ‣ 3 RoboCasa365: Large-Scale Simulation of 365 Everyday Tasks ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+Each task has 100 human demonstrations, for a total of 30k demonstrations.
+Our experiments feature four state-of-the-art methods: Diffusion policy ([Chi et al., 2023](#bib.bib10)), 𝝅𝟎\bm{\pi\_{0}} ([Black et al., 2024](#bib.bib21)),
+𝝅0.5\bm{\pi\_{0.5}} ([Physical Intelligence et al., 2025](#bib.bib24)),
+and GR00T N1.5 ([NVIDIA et al., 2025](#bib.bib22)).
+
+We train a multi-task language-conditioned policy for each method. We use the pretrained checkpoints released publicly for π0\pi\_{0}, π0.5\pi\_{0.5}, and GR00T N1.5 as the base model for training our models. We provide details on the training protocols for each method in Appendix [G](#A7 "Appendix G Policy Learning ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+
+We evaluate on the 50 tasks outlined in Section [3.4.2](#S3.SS4.SSS2 "3.4.2 Target datasets ‣ 3.4 Datasets ‣ 3 RoboCasa365: Large-Scale Simulation of 365 Everyday Tasks ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"): Atomic, Composite-Seen, and Composite-Unseen.
+Note that the Composite-Unseen tasks represent unseen tasks in the pretraining data; our evaluation for these tasks is zero-shot, aimed at understanding generalization to novel tasks.
+We evaluate in the pretraining kitchen scenes for each task and report average task completion success rates across methods.
+See Appendix [G](#A7 "Appendix G Policy Learning ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots") for details on the evaluation protocol.
+
+|  |  |  |  |  |
+| --- | --- | --- | --- | --- |
+| Task Split | Diffusion Policy | 𝝅𝟎\bm{\pi\_{0}} | 𝝅0.5\bm{\pi\_{0.5}} | GR00T N1.5 |
+| Atomic | 15.7 | 36.3 | 39.6 | 43.0 |
+| Composite-Seen | 0.2 | 5.2 | 7.1 | 9.6 |
+| Composite-Unseen | 1.25 | 0.7 | 1.2 | 4.4 |
+| Average | 6.1 | 15.0 | 16.9 | 20.0 |
+
+Table 1: Multi-task Training Results. We compare state-of-the-art policy learning approaches on our human pretraining data across 300 tasks, and report task success rates (%) across seen and unseen tasks. We see that learning composite tasks is more challenging, and that performance suffers when evaluating on unseen tasks.
+
+We report results in Table [1](#S4.T1 "Table 1 ‣ 4.1 Multi-task training ‣ 4 Experiments ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+Overall, we see that across all methods, learning Atomic tasks is the easiest, followed by learning Composite-Seen tasks and Composite-Unseen tasks.
+This is reasonable, as the Atomic tasks are shorter-horizon tasks that present fewer learning challenges for imitation learning ([Ross et al., 2011](#bib.bib2)), and the lower performance on Composite-Unseen tasks is due to the fact that the model has never been trained on these tasks.
+Overall, GR00T N1.5 performs the best among all methods, followed by π0.5\pi\_{0.5}, π0\pi\_{0}, and finally Diffusion Policy.
+They show non-zero success rates on Composite-Unseen tasks, a sign of stronger generalization abilities.
+Diffusion Policy performs the worst, highlighting how high-capacity vision-language-action models can better fit large, diverse multi-task robot datasets.
+While our multi-task learning experiments show that GR00T N1.5 outperforms other baselines, we do not claim that it is conclusively the superior method. Performance can be influenced by many factors, including the amount of compute used (e.g., batch size), data composition, and whether the visual or language backbones are fine-tuned.
+Overall, we see a significant opportunity for future methods to improve upon these results.
+
+### 4.2 Foundation model training
+
+In our next experiment, we are interested in studying foundation model training, i.e., training with our pretraining datasets, followed by fine-tuning on our target datasets.
+This learning paradigm has been established by numerous prior works in robotics ([Black et al., 2024](#bib.bib21); [NVIDIA et al., 2025](#bib.bib22)), with evidence that pretraining can aid learning downstream tasks in a more robust and data-efficient manner.
+In our experiments, our pretraining data includes human datasets across 300 tasks (411 hours), and synthetic data across 60 atomic tasks (1,615 hours), while our target data includes human datasets across 50 tasks (208 hours).
+Out of the 50 target tasks, 34 are also represented in the human pretraining data (Atomic and Composite-Seen tasks), and the target data includes an additional 16 composite tasks that are not seen in the pretraining data (Composite-Unseen).
+We first train on all of our pretraining datasets (see Section [3.4.1](#S3.SS4.SSS1 "3.4.1 Pretraining datasets ‣ 3.4 Datasets ‣ 3 RoboCasa365: Large-Scale Simulation of 365 Everyday Tasks ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots")), followed by fine-tuning independently on three separate target split datasets (Atomic, Composite-Seen, Composite-Unseen; see Section [3.4.2](#S3.SS4.SSS2 "3.4.2 Target datasets ‣ 3.4 Datasets ‣ 3 RoboCasa365: Large-Scale Simulation of 365 Everyday Tasks ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots")).
+We compare learning on different amounts of target data, with 50, 150, and 500 demos per task, representing 10%, 30%, and 100% of the total target data.
+
+Unless otherwise noted, we use GR00T N1.5 as the model for these experiments and all subsequent experiments.
+We open source all models for the community to benchmark all methods.
+We compare pretraining only, target task learning only, and pretraining followed by post-training on target data.
+After training, we evaluate the model across the 50 target tasks in the target kitchens.
+See Appendix [G](#A7 "Appendix G Policy Learning ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots") for a detailed discussion of the training and evaluation protocols.
+We report experiment results in Table [2](#S4.T2 "Table 2 ‣ 4.2 Foundation model training ‣ 4 Experiments ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+
+|  |  |  |  |  |  |  |  |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Task Type | Pretraining Only | Target Only | | | Pretraining + Target Post-Training | | |
+|  | 10% | 30% | 100% | 10% | 30% | 100% |
+| Atomic | 41.9 | 38.7 | 50.6 | 60.6 | 56.9 | 59.1 | 68.5 |
+| Composite-Seen | 0.0 | 11.0 | 22.7 | 35.0 | 25.4 | 34.6 | 40.6 |
+| Composite-Unseen | 0.2 | 11.2 | 27.5 | 33.3 | 22.7 | 30.8 | 42.1 |
+| Average | 15.1 | 21.0 | 34.3 | 43.7 | 35.9 | 42.2 | 51.1 |
+
+Table 2: Foundation Model Training Results. Comparing the impact of training on pretraining and target datasets on learning downstream tasks. The performances are measured by average task success rates (%).
+
+Figure 5: Foundation Model Training Results. Pre-training enables more effective learning of downstream tasks with significant gains in data efficiency.
+
+We see that with pretraining alone, the model performs over 40% on the atomic tasks but performs very poorly on the composite tasks.
+For target learning only, we see more capable policies. However, they require a high amount of data to be performant.
+Using pretraining yields significant improvements in model performance.
+These gains are especially pronounced for the Composite-Unseen tasks (see Table [2](#S4.T2 "Table 2 ‣ 4.2 Foundation model training ‣ 4 Experiments ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots")).
+We visualize the improvement in performance in Figure [5](#S4.F5 "Figure 5 ‣ 4.2 Foundation model training ‣ 4 Experiments ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"), visualizing the average task success rates from Table [2](#S4.T2 "Table 2 ‣ 4.2 Foundation model training ‣ 4 Experiments ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+We observe a roughly 3×\times improvement in data efficiency, i.e., pretraining helps achieve roughly the same performance as target learning only with 3×\times higher number of target task demonstrations.
+In Appendix [H.2](#A8.SS2 "H.2 Robustness Evaluations ‣ Appendix H Additional Experiments ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"), we present a rigorous robustness evaluation and analyze the effects of different factors on performance.
+
+### 4.3 Lifelong learning
+
+In contrast to the conventional two-stage paradigm of pretraining followed by post-training on target data, real-world robots must often acquire new skills continuously. This setting, known as lifelong learning, involves learning tasks over a sequence of phases. The central challenge is leveraging prior knowledge to learn new tasks while retaining previously acquired skills.
+We design a lifelong learning benchmark to assess these capabilities.
+In our experiments, we learn a series of tasks over four phases.
+Each phase involves learning progressively longer horizon tasks.
+Phase 1 involves learning 65 atomic tasks, Phase 2 involves learning 20 new composite tasks with 2 or 3 stages, Phase 3 involves learning 20 new composite tasks with 4 or 5 stages, and Phase 4 involves learning 20 new composite tasks with 6 or more stages.
+We define “stage” as the invocation of one of the robot skills defined by [Nasiriany et al. (2024)](#bib.bib19), such as pick-and-place, turning knobs, and navigation.
+We use pretraining datasets for these phases; Phase 1 includes all human and MimicGen datasets for atomic tasks, while Phases 2, 3, and 4 feature human datasets.
+
+|  |  |  |  |  |
+| --- | --- | --- | --- | --- |
+| Phase | Atomic Tasks | 2-3 Stage Tasks | 4–5 Stage Tasks | 6+ Stage Tasks |
+| Phase 1 | 41.5 | - | - | - |
+| Phase 2 | 13.9 | 24.5 | - | - |
+| Phase 3 | 13.9 | 4.8 | 11.3 | - |
+| Phase 4 | 10.6 | 1.7 | 2.7 | 4.3 |
+
+Table 3: Lifelong Learning Results. We train across four phases with progressively longer horizon tasks. After each phase, we report task success rates (%) across all tasks seen in the current and previous phases.
+
+For each phase NN, we take the model previously trained from phase N−1N-1, and fine-tune it for data pertaining to the tasks in phase NN.
+After training completes for phase NN, we run evaluations for tasks from phase 1 through phase NN in the pretraining kitchens and report results.
+We report results in Table [3](#S4.T3 "Table 3 ‣ 4.3 Lifelong learning ‣ 4 Experiments ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+We make two distinct observations.
+First, we see that the success rates steadily drop as we learn progressively longer-horizon tasks in each new phase (see the diagonal entries in the table).
+This is intuitively the case, as learning longer-horizon tasks can demand higher data requirements.
+Second, we see that the performance on previously learned tasks steadily drops with each new phase.
+This highlights the catastrophic forgetting problem, i.e., performance degrades on prior tasks if the agent does not continue to train on them in subsequent phases.
+Overall, this experiment highlights the current challenges with lifelong learning and is a useful testbed for improving upon these results.
+
+### 4.4 Pretraining Data Composition Study
+
+In Section [4.2](#S4.SS2 "4.2 Foundation model training ‣ 4 Experiments ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"), we showed that pretraining brings forth significant improvements in data efficiency for learning downstream target tasks.
+In this section, we run experiments to further understand how the composition of pretraining data affects downstream performance.
+In our foundation model training experiments, we used all of the available pretraining data, comprising human data from 300 tasks and MimicGen data across 60 tasks (Human300 + MG60).
+We compare to a variant that does not include MimicGen data and only includes the human data (Human300).
+To better understand the role of task diversity in the pretraining data, we compare two variants that include human data from 50 tasks (Human50).
+These 50 tasks include the Atomic and Composite-Seen tasks, as well as an additional randomly selected set of tasks.
+Finally, we compare with the case with no pretraining data.
+Our pretraining and target protocol are identical to the process in Section [4.2](#S4.SS2 "4.2 Foundation model training ‣ 4 Experiments ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+We specifically run two separate sets of experiments, one for the low-data regime with 10% of the target data, and one for the high-data regime with 100% of the target data.
+
+|  |  |  |  |  |
+| --- | --- | --- | --- | --- |
+| Target Data | Pretraining Data | | | |
+| No Pretraining | Human50 | Human300 | Human300 + MG60 |
+| Atomic (10%) | 38.7 | 52.0 | 57.0 | 56.9 |
+| Composite-Seen (10%) | 11.0 | 26.2 | 28.7 | 25.4 |
+| Composite-Unseen (10%) | 11.2 | 23.8 | 32.3 | 22.7 |
+| Average (10%) | 21.0 | 34.7 | 40.0 | 35.9 |
+| Atomic (100%) | 60.6 | 68.1 | 70.0 | 68.5 |
+| Composite-Seen (100%) | 35.0 | 41.0 | 41.2 | 40.6 |
+| Composite-Unseen (100%) | 33.3 | 38.5 | 44.0 | 42.1 |
+| Average (100%) | 43.7 | 50.0 | 52.5 | 51.1 |
+
+Table 4: Pretraining Task Diversity Results. We report task success rates (%) and compare the downstream effects of training on different mixtures of pretraining data.
+
+We report evaluations in target kitchens in Table [4](#S4.T4 "Table 4 ‣ 4.4 Pretraining Data Composition Study ‣ 4 Experiments ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+Compared to training on all pretraining data (Human300 + MG60), we find that training on just the human data (Human300) yields better downstream learning results.
+Although MimicGen enables the large-scale generation of synthetic trajectories, we find that the resulting demonstrations vary in quality. Developing methods that can more effectively leverage such large, mixed-quality datasets is an important direction for future work.
+Comparing the Human50 and Human300 settings, we see that increasing the number of pretraining tasks can enable a significant improvement in downstream target tasks, especially for the low-data regime target data setting.
+Notably, the biggest gains are seen for the Composite-Unseen tasks, suggesting that increasing the scope of task diversity is especially beneficial for learning novel tasks.
+
+In addition to task diversity, we study the effects of scene diversity in pretraining on downstream performance. We report these results in Appendix [H.1](#A8.SS1 "H.1 Pretraining Scene Diversity ‣ Appendix H Additional Experiments ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+
+### 4.5 Real-World Experiments
+
+We conduct an additional set of experiments to examine the utility of our benchmark for downstream real-world applications. Our real-world setup uses the DROID Panda arm ([Khazatsky et al., 2024](#bib.bib16)) with three cameras.
+
+We examine four tasks in a real kitchen:
+
+* •
+
+  CloseElectricKettleLid: close the electric kettle lid
+* •
+
+  PickPlaceToasterOvenToCounter: place the item from the toaster oven to the counter
+* •
+
+  PickPlaceCounterToCabinet: place the object from the counter to the cabinet
+* •
+
+  PlaceOnDishRack: a longer horizon task, involving placing two items from the sink onto the dish rack.
+
+![Refer to caption](2603.04356v1/figures/real_robot/real_robot_setup_v2.png)
+
+Figure 6: Real-Robot Platform. Our real-world setup features a Panda robot arm in a real kitchen.
+
+We collect 30 demonstrations for each of the first three tasks, and 50 demonstrations of the last task, for a total of 140 real-world demonstrations. We compare the following settings:
+
+* •
+
+  Real Only: we train the GR00T N1.5 model on the real-world demonstrations (140 demonstrations);
+* •
+
+  Sim-and-Real (Ours): we first mid-train the GR00T N1.5 model on our simulation tasks (we use data from the 150 highest performing tasks in simulation), and then co-fine-tune the model on the real-world demonstrations and corresponding data for the four real-world tasks in simulation.
+
+Following best practices for sim-and-real alignment from [Maddukuri et al. (2025)](#bib.bib39), we re-render our simulation datasets to match the camera views of the real setting, facilitating improved transfer.
+After training, we evaluate each model in the real world, where we conduct 20 trials per task. We report task success rates in Table [5](#S4.T5 "Table 5 ‣ 4.5 Real-World Experiments ‣ 4 Experiments ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+
+|  |  |  |  |  |  |
+| --- | --- | --- | --- | --- | --- |
+|  | CloseElectric  KettleLid | PickPlaceToasterOven  ToCounter | PickPlaceCounter  ToCabinet | PlaceOn  DishRack | Avg |
+| Real Only | 70 | 70 | 52 | 55 | 61.8 |
+| Sim-and-Real (Ours) | 70 | 100 | 84 | 65 | 79.8 |
+
+Table 5: Real-world evaluations. Across four real-world tasks, we compare training on real-world data only versus training on a mixture of our simulation and real-world data. By additionally using simulation data, it outperforms training on real-world data only by an average task success rate of 18.1%.
+
+Overall, the Real Only model achieves a 61.8% average success rate, while Sim-and-Real training reaches 79.8%, a substantial improvement. This highlights the value of our simulation benchmark for both algorithm evaluation and real-world policy learning.
+
+## 5 Conclusion
+
+We presented RoboCasa365, a large-scale simulation framework for training and benchmarking generalist robot models. RoboCasa365 provides 2,500 realistic kitchen environments, 365 everyday tasks spanning over 50 activity categories, and over 2,000 hours of robot interaction data, making it one of the most diverse simulation resources to date.
+
+Using this benchmark, we conducted a systematic study along three axes: multi-task learning at scale, foundation model learning, and lifelong learning. Our experiments show that (i) generalist policies trained on large multi-task datasets can acquire broad competence but still face challenges with long-horizon tasks, (ii) pretraining data significantly improves downstream learning, with both scale and task diversity playing key roles, and (iii) lifelong learning remains an open challenge, with substantial trade-offs between acquiring new tasks and retaining prior knowledge.
+
+RoboCasa365 opens several avenues for future work. First, the benchmark is currently limited to kitchen environments, raising the question of how well findings transfer to other household settings or broader domains. Second, while the dataset is large, it does not capture the full sensory and physical complexity of the real world, and bridging the gap between simulation and real-world deployment remains a significant challenge. Addressing these limitations will be an important direction for future research.
+
+## Acknowledgments
+
+We thank Qi Wang for his valuable assistance in coordinating project resources, particularly in data collection and asset preparation.
+We thank Steve Xie and the LightWheel team for their close collaboration in providing simulation assets and support with data collection.
+We also thank Ajay Mandlekar, Zi-ang Cao, and Kevin Lin for their assistance with running benchmarking experiments.
+Part of this work was done during Soroush Nasiriany’s internship at NVIDIA Research. This work was partially supported by the National Science Foundation (FRR-2145283, EFRI-2318065), the Office of Naval Research (N00014- 24-1-2550), the DARPA TIAMAT program (HR0011-24-9-0428), the Army Research Lab (W911NF-25-1-0065), and the KIST-UT collaboration (UTAUS-FA00004578). It was also supported by the Institute of Information & Communications Technology Planning & Evaluation (IITP) grant funded by the Korean Government (MSIT) (No. RS2024-00457882, National AI Research Lab Project).
+
+## References
+
+* Atreya et al. (2025)
+  P. Atreya, K. Pertsch, T. Lee, M. J. Kim, A. Jain, A. Kuramshin, C. Eppner, C. Neary, E. Hu, F. Ramos, et al.
+  RoboArena: distributed real-world evaluation of generalist robot policies.
+  In Proceedings of the Conference on Robot Learning (CoRL 2025),
+  Cited by: [§2](#S2.p2.1 "2 Related Work ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Beyer et al. (2024)
+  L. Beyer, A. Steiner, A. S. Pinto, A. Kolesnikov, X. Wang, D. Salz, M. Neumann, I. Alabdulmohsin, M. Tschannen, E. Bugliarello, T. Unterthiner, D. Keysers, S. Koppula, F. Liu, A. Grycner, A. Gritsenko, N. Houlsby, M. Kumar, K. Rong, J. Eisenschlos, R. Kabra, M. Bauer, M. Bošnjak, X. Chen, M. Minderer, P. Voigtlaender, I. Bica, I. Balažević, J. Puigcerver, P. Papalampidi, O. Henaff, X. Xiong, R. Soricut, J. Harmsen, and X. Zhai
+  PaliGemma: a versatile 3b vlm for transfer.
+  arXiv preprint.
+  External Links: 2407.07726,
+  [Link](https://arxiv.org/abs/2407.07726)
+  Cited by: [§G.1](#A7.SS1.p5.1 "G.1 Model Architectures and Training Protocol ‣ Appendix G Policy Learning ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Black et al. (2024)
+  K. Black, N. Brown, D. Driess, A. Esmail, M. Equi, C. Finn, N. Fusai, L. Groom, K. Hausman, B. Ichter, S. Jakubczak, T. Jones, L. Ke, S. Levine, A. Li-Bell, M. Mothukuri, S. Nair, K. Pertsch, L. X. Shi, J. Tanner, Q. Vuong, A. Walling, H. Wang, and U. Zhilinsky
+  π0\pi\_{0}: A vision-language-action flow model for general robot control.
+  arXiv preprint arXiv:2410.24164v1.
+  External Links: [Link](https://arxiv.org/abs/2410.24164v1)
+  Cited by: [§1](#S1.p1.1 "1 Introduction ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"),
+  [§4.1](#S4.SS1.p2.1 "4.1 Multi-task training ‣ 4 Experiments ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"),
+  [§4.2](#S4.SS2.p1.1 "4.2 Foundation model training ‣ 4 Experiments ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Brohan et al. (2023)
+  A. Brohan, N. Brown, J. Carbajal, Y. Chebotar, X. Chen, K. Choromanski, T. Ding, D. Driess, A. Dubey, C. Finn, P. Florence, C. Fu, M. G. Arenas, K. Gopalakrishnan, K. Han, K. Hausman, A. Herzog, J. Hsu, B. Ichter, A. Irpan, N. Joshi, R. Julian, D. Kalashnikov, Y. Kuang, I. Leal, L. Lee, T. E. Lee, S. Levine, Y. Lu, H. Michalewski, I. Mordatch, K. Pertsch, K. Rao, K. Reymann, M. Ryoo, G. Salazar, P. Sanketi, P. Sermanet, J. Singh, A. Singh, R. Soricut, H. Tran, V. Vanhoucke, Q. Vuong, A. Wahid, S. Welker, P. Wohlhart, J. Wu, F. Xia, T. Xiao, P. Xu, S. Xu, T. Yu, and B. Zitkovich
+  RT-2: vision-language-action models transfer web knowledge to robotic control.
+  External Links: 2307.15818,
+  [Link](https://arxiv.org/abs/2307.15818)
+  Cited by: [§2](#S2.p3.1 "2 Related Work ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Brohan et al. (2022)
+  A. Brohan, N. Brown, J. Carbajal, Y. Chebotar, J. Dabis, C. Finn, K. Gopalakrishnan, K. Hausman, A. Herzog, J. Hsu, et al.
+  RT-1: robotics transformer for real-world control at scale.
+  In arXiv preprint arXiv:2212.06817,
+  Cited by: [§2](#S2.p2.1 "2 Related Work ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Chi et al. (2023)
+  C. Chi, S. Feng, Y. Du, Z. Xu, E. Cousineau, B. Burchfiel, and S. Song
+  Diffusion policy: visuomotor policy learning via action diffusion.
+  arXiv preprint arXiv:2303.04137.
+  Cited by: [§4.1](#S4.SS1.p2.1 "4.1 Multi-task training ‣ 4 Experiments ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Correll et al. (2018)
+  N. Correll, K. E. Bekris, D. Berenson, O. Brock, A. Causo, K. Hauser, K. Okada, A. Rodriguez, J. M. Romano, and P. R. Wurman
+  Analysis and observations from the first amazon picking challenge.
+  IEEE Transactions on Automation Science and Engineering 15 (1), pp. 172–188.
+  External Links: [Document](https://dx.doi.org/10.1109/TASE.2016.2600527),
+  [Link](https://doi.org/10.1109/TASE.2016.2600527)
+  Cited by: [§2](#S2.p2.1 "2 Related Work ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Dai et al. (2024)
+  T. Dai, J. Wong, Y. Jiang, C. Wang, C. Gokmen, R. Zhang, J. Wu, and L. Fei-Fei
+  Automated creation of digital cousins for robust policy learning.
+  arXiv preprint arXiv:2410.07408.
+  Cited by: [§3.2](#S3.SS2.p2.1 "3.2 Diverse Kitchen Scenes ‣ 3 RoboCasa365: Large-Scale Simulation of 365 Everyday Tasks ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Deitke et al. (2022)
+  M. Deitke, E. VanderBilt, A. Herrasti, L. Weihs, J. Salvador, K. Ehsani, W. Han, E. Kolve, A. Farhadi, A. Kembhavi, and R. Mottaghi
+  ProcTHOR: large-scale embodied ai using procedural generation.
+  External Links: 2206.06994,
+  [Link](https://arxiv.org/abs/2206.06994)
+  Cited by: [§2](#S2.p1.1 "2 Related Work ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Gemini Robotics Team et al. (2025)
+  Gemini Robotics Team, S. Abeyruwan, J. Ainslie, J. Alayrac, M. G. Arenas, T. Armstrong, A. Balakrishna, R. Baruch, M. Bauzá, M. Blokzijl, S. Bohez, K. Bousmalis, A. Brohan, T. Buschmann, A. Byravan, S. Cabi, K. Caluwaerts, F. Casarini, O. Chang, J. E. Chen, X. Chen, H. L. Chiang, K. Choromanski, D. D’Ambrosio, S. Dasari, T. Davchev, C. Devin, N. Di Palo, T. Ding, A. Dostmohamed, D. Driess, Y. Du, D. Dwibedi, M. Elabd, C. Fantacci, C. Fong, E. Frey, C. Fu, M. Giustina, K. Gopalakrishnan, L. Graesser, L. Hasenclever, N. Heess, B. Hernaez, A. Herzog, R. Hofer, T. E. Lee, J. Liang, Y. Lin, S. Maddineni, A. Majumdar, A. H. Michaely, R. Moreno, M. Neunert, F. Nori, C. Parada, E. Parisotto, P. Pastor, A. Pooley, K. Rao, K. Reymann, D. Sadigh, S. Saliceti, P. Sanketi, P. Sermanet, D. Shah, M. Sharma, K. Shea, C. Shu, V. Sindhwani, S. Singh, R. Soricut, J. T. Springenberg, R. Sterneck, R. Surdulescu, J. Tan, J. Tompson, V. Vanhoucke, J. Varley, G. Vesom, G. Vezzani, O. Vinyals, A. Wahid, and S. Welker
+  Gemini robotics: bringing ai into the physical world.
+  CoRR abs/2503.20020.
+  External Links: [Document](https://dx.doi.org/10.48550/arXiv.2503.20020),
+  [Link](https://arxiv.org/abs/2503.20020)
+  Cited by: [§1](#S1.p1.1 "1 Introduction ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Gu et al. (2023)
+  J. Gu, F. Xiang, X. Li, Z. Ling, X. Liu, T. Mu, Y. Tang, S. Tao, X. Wei, Y. Yao, et al.
+  Maniskill2: a unified benchmark for generalizable manipulation skills.
+  arXiv preprint arXiv:2302.04659.
+  Cited by: [§2](#S2.p1.1 "2 Related Work ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Haviland et al. (2022)
+  J. Haviland, N. Sünderhauf, and P. Corke
+  A holistic approach to reactive mobile manipulation.
+  IEEE Robotics and Automation Letters 7 (2), pp. 3122–3129.
+  Cited by: [§3.4.1](#S3.SS4.SSS1.p1.1 "3.4.1 Pretraining datasets ‣ 3.4 Datasets ‣ 3 RoboCasa365: Large-Scale Simulation of 365 Everyday Tasks ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* James et al. (2020)
+  S. James, Z. Ma, D. R. Arrojo, and A. J. Davison
+  Rlbench: the robot learning benchmark & learning environment.
+  IEEE Robotics and Automation Letters 5 (2), pp. 3019–3026.
+  Cited by: [§1](#S1.p3.1 "1 Introduction ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"),
+  [§2](#S2.p1.1 "2 Related Work ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Jiang et al. (2025)
+  Z. Jiang, Y. Xie, K. Lin, Z. Xu, W. Wan, A. Mandlekar, L. Fan, and Y. Zhu
+  DexMimicGen: automated data generation for bimanual dexterous manipulation via imitation learning.
+  External Links: 2410.24185,
+  [Link](https://arxiv.org/abs/2410.24185)
+  Cited by: [§1](#S1.p3.1 "1 Introduction ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Khatib (1995)
+  O. Khatib
+  Inertial properties in robotic manipulation: an object-level framework.
+  International Journal of Robotics Research.
+  Cited by: [§B.2](#A2.SS2.p1.1 "B.2 Action Space ‣ Appendix B Simulation Infrastructure ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Khazatsky et al. (2024)
+  A. Khazatsky, K. Pertsch, S. Nair, A. Balakrishna, S. Dasari, S. Karamcheti, S. Nasiriany, M. K. Srirama, L. Y. Chen, K. Ellis, et al.
+  DROID: a large-scale in-the-wild robot manipulation dataset.
+  Cited by: [§2](#S2.p2.1 "2 Related Work ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"),
+  [§4.5](#S4.SS5.p1.1 "4.5 Real-World Experiments ‣ 4 Experiments ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Kim et al. (2024)
+  M. J. Kim, K. Pertsch, S. Karamcheti, T. Xiao, A. Balakrishna, S. Nair, R. Rafailov, E. Foster, G. Lam, P. Sanketi, Q. Vuong, T. Kollar, B. Burchfiel, R. Tedrake, D. Sadigh, S. Levine, P. Liang, and C. Finn
+  OpenVLA: an open-source vision-language-action model.
+  External Links: 2406.09246,
+  [Link](https://arxiv.org/abs/2406.09246)
+  Cited by: [§2](#S2.p3.1 "2 Related Work ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Kolve et al. (2017)
+  E. Kolve, R. Mottaghi, W. Han, E. VanderBilt, L. Weihs, A. Herrasti, M. Deitke, K. Ehsani, D. Gordon, Y. Zhu, et al.
+  AI2-THOR: an interactive 3d environment for visual ai.
+  arXiv preprint arXiv:1712.05474.
+  Cited by: [§2](#S2.p1.1 "2 Related Work ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Krotkov et al. (2016)
+  E. P. Krotkov, D. Hackett, L. Jackel, M. Perschbacher, J. Pippine, J. Strauss, G. Pratt, and C. Orlowski
+  The darpa robotics challenge finals: results and perspectives.
+  Journal of Field Robotics 34 (2), pp. 229–240.
+  External Links: [Document](https://dx.doi.org/10.1002/rob.21683),
+  [Link](https://onlinelibrary.wiley.com/doi/10.1002/rob.21683)
+  Cited by: [§2](#S2.p2.1 "2 Related Work ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Li et al. (2023)
+  C. Li, R. Zhang, J. Wong, C. Gokmen, S. Srivastava, R. Martín-Martín, C. Wang, G. Levine, M. Lingelbach, J. Sun, et al.
+  Behavior-1k: a benchmark for embodied ai with 1,000 everyday activities and realistic simulation.
+  In Conference on Robot Learning,
+  pp. 80–93.
+  Cited by: [§2](#S2.p1.1 "2 Related Work ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"),
+  [§2](#S2.p2.1 "2 Related Work ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Li et al. (2024)
+  X. Li, K. Hsu, J. Gu, K. Pertsch, O. Mees, H. R. Walke, C. Fu, I. Lunawat, I. Sieh, S. Kirmani, S. Levine, J. Wu, C. Finn, H. Su, Q. Vuong, and T. Xiao
+  Evaluating real-world robot manipulation policies in simulation.
+  arXiv preprint arXiv:2405.05941.
+  Cited by: [§2](#S2.p1.1 "2 Related Work ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Li et al. (2025)
+  Z. Li, G. Chen, S. Liu, S. Wang, V.S. Vibashan, Y. Ji, S. Lan, H. Zhang, Y. Zhao, S. Radhakrishnan, N. Chang, K. Sapra, A. S. Deshmukh, T. Rintamaki, M. Le, I. Karmanov, L. Voegtle, P. Fischer, D. Huang, T. Roman, T. Lu, J. M. Alvarez, B. Catanzaro, J. Kautz, A. Tao, G. Liu, and Z. Yu
+  Eagle 2: building post-training data strategies from scratch for frontier vision-language models.
+  arXiv preprint arXiv:2501.14818.
+  Cited by: [§G.1](#A7.SS1.p6.1 "G.1 Model Architectures and Training Protocol ‣ Appendix G Policy Learning ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Lipman et al. (2023)
+  Y. Lipman, R. T.Q. Chen, H. Ben‐Hamu, M. Nickel, and M. Le
+  Flow matching for generative modeling.
+  In International Conference on Learning Representations (ICLR),
+  External Links: [Link](https://openreview.net/forum?id=KZy4-0etZgZ),
+  2210.02747
+  Cited by: [§G.1](#A7.SS1.p5.1 "G.1 Model Architectures and Training Protocol ‣ Appendix G Policy Learning ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Liu et al. (2023)
+  B. Liu, Y. Zhu, C. Gao, Y. Feng, Q. Liu, Y. Zhu, and P. Stone
+  Libero: benchmarking knowledge transfer for lifelong robot learning.
+  arXiv preprint arXiv:2306.03310.
+  Cited by: [§1](#S1.p3.1 "1 Introduction ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"),
+  [§2](#S2.p1.1 "2 Related Work ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"),
+  [§2](#S2.p2.1 "2 Related Work ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Maddukuri et al. (2025)
+  A. Maddukuri, Z. Jiang, L. Y. Chen, S. Nasiriany, Y. Xie, Y. Fang, W. Huang, Z. Wang, Z. Xu, N. Chernyadev, S. Reed, K. Goldberg, A. Mandlekar, L. Fan, and Y. Zhu
+  Sim-and-real co-training: a simple recipe for vision-based robotic manipulation.
+  In Proceedings of Robotics: Science and Systems (RSS),
+  Los Angeles, CA, USA.
+  Cited by: [§4.5](#S4.SS5.p4.1 "4.5 Real-World Experiments ‣ 4 Experiments ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Mandlekar et al. (2023)
+  A. Mandlekar, S. Nasiriany, B. Wen, I. Akinola, Y. Narang, L. Fan, Y. Zhu, and D. Fox
+  Mimicgen: a data generation system for scalable robot learning using human demonstrations.
+  arXiv preprint arXiv:2310.17596.
+  Cited by: [§1](#S1.p3.1 "1 Introduction ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"),
+  [§1](#S1.p7.1 "1 Introduction ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"),
+  [§3.4.1](#S3.SS4.SSS1.p2.1 "3.4.1 Pretraining datasets ‣ 3.4 Datasets ‣ 3 RoboCasa365: Large-Scale Simulation of 365 Everyday Tasks ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Mandlekar et al. (2021)
+  A. Mandlekar, D. Xu, J. Wong, S. Nasiriany, C. Wang, R. Kulkarni, L. Fei-Fei, S. Savarese, Y. Zhu, and R. Martín-Martín
+  What matters in learning from offline human demonstrations for robot manipulation.
+  In Conference on Robot Learning,
+  Cited by: [§1](#S1.p3.1 "1 Introduction ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"),
+  [§2](#S2.p2.1 "2 Related Work ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Mittal et al. (2023)
+  M. Mittal, C. Yu, Q. Yu, J. Liu, N. Rudin, D. Hoeller, J. L. Yuan, R. Singh, Y. Guo, H. Mazhar, A. Mandlekar, B. Babich, G. State, M. Hutter, and A. Garg
+  Orbit: a unified simulation framework for interactive robot learning environments.
+  IEEE Robotics and Automation Letters 8 (6), pp. 3740–3747.
+  External Links: [Document](https://dx.doi.org/10.1109/LRA.2023.3270034)
+  Cited by: [§2](#S2.p1.1 "2 Related Work ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Nasiriany et al. (2024)
+  S. Nasiriany, A. Maddukuri, L. Zhang, A. Parikh, A. Lo, A. Joshi, A. Mandlekar, and Y. Zhu
+  RoboCasa: large-scale simulation of everyday tasks for generalist robots.
+  In Robotics: Science and Systems (RSS),
+  Cited by: [Appendix A](#A1.p1.1 "Appendix A Use of Large Language Models ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"),
+  [§B.2](#A2.SS2.p1.1 "B.2 Action Space ‣ Appendix B Simulation Infrastructure ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"),
+  [§1](#S1.p4.1 "1 Introduction ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"),
+  [§2](#S2.p1.1 "2 Related Work ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"),
+  [§2](#S2.p2.1 "2 Related Work ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"),
+  [§3.1](#S3.SS1.p1.1 "3.1 Expanding the Scope of Assets ‣ 3 RoboCasa365: Large-Scale Simulation of 365 Everyday Tasks ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"),
+  [§3.1](#S3.SS1.p2.1 "3.1 Expanding the Scope of Assets ‣ 3 RoboCasa365: Large-Scale Simulation of 365 Everyday Tasks ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"),
+  [§3.2](#S3.SS2.p1.1 "3.2 Diverse Kitchen Scenes ‣ 3 RoboCasa365: Large-Scale Simulation of 365 Everyday Tasks ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"),
+  [§3.2](#S3.SS2.p2.1 "3.2 Diverse Kitchen Scenes ‣ 3 RoboCasa365: Large-Scale Simulation of 365 Everyday Tasks ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"),
+  [§3.3](#S3.SS3.p1.1 "3.3 Suite of 365 Everyday Tasks ‣ 3 RoboCasa365: Large-Scale Simulation of 365 Everyday Tasks ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"),
+  [§3.3](#S3.SS3.p2.1 "3.3 Suite of 365 Everyday Tasks ‣ 3 RoboCasa365: Large-Scale Simulation of 365 Everyday Tasks ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"),
+  [§3](#S3.p1.1 "3 RoboCasa365: Large-Scale Simulation of 365 Everyday Tasks ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"),
+  [§4.3](#S4.SS3.p1.1 "4.3 Lifelong learning ‣ 4 Experiments ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* NVIDIA et al. (2025)
+  NVIDIA, N. C. Johan Bjorck andFernando Castañeda, X. Da, R. Ding, L. ”. Fan, Y. Fang, D. Fox, F. Hu, S. Huang, J. Jang, Z. Jiang, J. Kautz, K. Kundalia, L. Lao, Z. Li, Z. Lin, K. Lin, G. Liu, E. Llontop, L. Magne, A. Mandlekar, A. Narayan, S. Nasiriany, S. Reed, Y. L. Tan, G. Wang, Z. Wang, J. Wang, Q. Wang, J. Xiang, Y. Xie, Y. Xu, Z. Xu, S. Ye, Z. Yu, A. Zhang, H. Zhang, Y. Zhao, R. Zheng, and Y. Zhu
+  GR00T N1: an open foundation model for generalist humanoid robots.
+  In ArXiv Preprint,
+  External Links: 2503.14734
+  Cited by: [§1](#S1.p1.1 "1 Introduction ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"),
+  [§2](#S2.p3.1 "2 Related Work ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"),
+  [§4.1](#S4.SS1.p2.1 "4.1 Multi-task training ‣ 4 Experiments ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"),
+  [§4.2](#S4.SS2.p1.1 "4.2 Foundation model training ‣ 4 Experiments ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Octo Model Team et al. (2024)
+  Octo Model Team, D. Ghosh, H. Walke, K. Pertsch, K. Black, O. Mees, S. Dasari, J. Hejna, C. Xu, J. Luo, T. Kreiman, Y. L. Tan, L. Y. Chen, P. Sanketi, Q. Vuong, T. Xiao, D. Sadigh, C. Finn, and S. Levine
+  Octo: an open-source generalist robot policy.
+  In Proceedings of Robotics: Science and Systems,
+  Delft, Netherlands.
+  Cited by: [§2](#S2.p3.1 "2 Related Work ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Open X-Embodiment Collaboration et al. (2023)
+  Open X-Embodiment Collaboration et al.
+  Open X-Embodiment: robotic learning datasets and RT-X models.
+  Note: <https://arxiv.org/abs/2310.08864>
+  Cited by: [§2](#S2.p2.1 "2 Related Work ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"),
+  [§2](#S2.p3.1 "2 Related Work ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Perez et al. (2018)
+  E. Perez, F. Strub, H. de Vries, V. Dumoulin, and A. Courville
+  FiLM: visual reasoning with a general conditioning layer.
+  In Proceedings of the Thirty-Second AAAI Conference on Artificial Intelligence (AAAI),
+  Vol. 32, pp. 3942–3951.
+  External Links: [Document](https://dx.doi.org/10.1609/aaai.v32i1.11671),
+  [Link](https://aaai.org/ocs/index.php/AAAI/AAAI18/paper/view/17253),
+  1709.07871
+  Cited by: [§G.1](#A7.SS1.p4.1 "G.1 Model Architectures and Training Protocol ‣ Appendix G Policy Learning ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Physical Intelligence et al. (2025)
+  Physical Intelligence, K. Black, N. Brown, J. Darpinian, K. Dhabalia, D. Driess, A. Esmail, M. Equi, C. Finn, N. Fusai, M. Y. Galliker, D. Ghosh, L. Groom, K. Hausman, B. Ichter, S. Jakubczak, T. Jones, L. Ke, D. LeBlanc, S. Levine, A. Li-Bell, M. Mothukuri, S. Nair, K. Pertsch, A. Z. Ren, L. X. Shi, L. Smith, J. T. Springenberg, K. Stachowicz, J. Tanner, Q. Vuong, H. Walke, A. Walling, H. Wang, L. Yu, and U. Zhilinsky
+  π0.5\pi\_{0.5}: A vision-language-action model with open-world generalization.
+  CoRR abs/2504.16054.
+  External Links: [Document](https://dx.doi.org/10.48550/arXiv.2504.16054),
+  [Link](https://arxiv.org/abs/2504.16054)
+  Cited by: [§1](#S1.p1.1 "1 Introduction ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"),
+  [§4.1](#S4.SS1.p2.1 "4.1 Multi-task training ‣ 4 Experiments ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Radford et al. (2021)
+  A. Radford, J. W. Kim, C. Hallacy, A. Ramesh, G. Goh, S. Agarwal, G. Sastry, A. Askell, P. Mishkin, J. Clark, G. Krueger, and I. Sutskever
+  Learning transferable visual models from natural language supervision.
+  In Proceedings of the 38th International Conference on Machine Learning (ICML),
+  Proceedings of Machine Learning Research, Vol. 139, pp. 8748–8763.
+  External Links: [Link](https://proceedings.mlr.press/v139/radford21a.html),
+  2103.00020
+  Cited by: [§G.1](#A7.SS1.p4.1 "G.1 Model Architectures and Training Protocol ‣ Appendix G Policy Learning ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Ross et al. (2011)
+  S. Ross, G. Gordon, and D. Bagnell
+  A reduction of imitation learning and structured prediction to no-regret online learning.
+  In Proceedings of the fourteenth international conference on artificial intelligence and statistics,
+  pp. 627–635.
+  Cited by: [§4.1](#S4.SS1.p5.1 "4.1 Multi-task training ‣ 4 Experiments ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Saxena et al. (2025)
+  V. Saxena, M. Bronars, N. R. Arachchige, K. Wang, W. C. Shin, S. Nasiriany, A. Mandlekar, and D. Xu
+  What matters in learning from large-scale datasets for robot manipulation.
+  External Links: 2506.13536,
+  [Link](https://arxiv.org/abs/2506.13536)
+  Cited by: [§1](#S1.p3.1 "1 Introduction ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Shukor et al. (2025)
+  M. Shukor, D. Aubakirova, F. Capuano, P. Kooijmans, S. Palma, A. Zouitine, M. Aractingi, C. Pascal, M. Russi, A. Marafioti, S. Alibert, M. Cord, T. Wolf, and R. Cadene
+  SmolVLA: a vision-language-action model for affordable and efficient robotics.
+  External Links: 2506.01844,
+  [Link](https://arxiv.org/abs/2506.01844)
+  Cited by: [§2](#S2.p3.1 "2 Related Work ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Szot et al. (2021)
+  A. Szot, A. Clegg, E. Undersander, E. Wijmans, Y. Zhao, J. Turner, N. Maestre, M. Mukadam, D. S. Chaplot, O. Maksymets, et al.
+  Habitat 2.0: training home assistants to rearrange their habitat.
+  Advances in Neural Information Processing Systems 34, pp. 251–266.
+  Cited by: [§2](#S2.p1.1 "2 Related Work ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Tao et al. (2025)
+  S. Tao, F. Xiang, A. Shukla, Y. Qin, X. Hinrichsen, X. Yuan, C. Bao, X. Lin, Y. Liu, T. Chan, Y. Gao, X. Li, T. Mu, N. Xiao, A. Gurha, V. N. Rajesh, Y. W. Choi, Y. Chen, Z. Huang, R. Calandra, R. Chen, S. Luo, and H. Su
+  ManiSkill3: gpu parallelized robotics simulation and rendering for generalizable embodied ai.
+  Robotics: Science and Systems.
+  Cited by: [§2](#S2.p1.1 "2 Related Work ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Todorov et al. (2012)
+  E. Todorov, T. Erez, and Y. Tassa
+  Mujoco: a physics engine for model-based control.
+  In IEEE/RSJ International Conference on Intelligent Robots and Systems,
+  pp. 5026–5033.
+  Cited by: [§B.1](#A2.SS1.p1.1 "B.1 Physics and Rendering Engine ‣ Appendix B Simulation Infrastructure ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* TRI LBM Team et al. (2025)
+  TRI LBM Team, J. Barreiros, A. Beaulieu, A. Bhat, R. Cory, E. Cousineau, H. Dai, C. Fang, K. Hashimoto, M. Z. Irshad, M. Itkina, N. Kuppuswamy, K. Lee, K. Liu, D. McConachie, I. McMahon, H. Nishimura, C. Phillips-Grafflin, C. Richter, P. Shah, K. Srinivasan, B. Wulfe, C. Xu, M. Zhang, A. Alspach, M. Angeles, K. Arora, V. C. Guizilini, A. Castro, D. Chen, T. Chu, S. Creasey, S. Curtis, R. Denitto, E. Dixon, E. Dusel, M. Ferreira, A. Goncalves, G. Gould, D. Guoy, S. Gupta, X. Han, K. Hatch, B. Hathaway, A. Henry, H. Hochsztein, P. Horgan, S. Iwase, D. Jackson, S. Karamcheti, S. Keh, J. Masterjohn, J. Mercat, P. Miller, P. Mitiguy, T. Nguyen, J. Nimmer, Y. Noguchi, R. Ong, A. Onol, O. Pfannenstiehl, R. Poyner, L. P. M. Rocha, G. Richardson, C. Rodriguez, D. Seale, M. Sherman, M. Smith-Jones, D. Tago, P. Tokmakov, M. Tran, B. V. Hoorick, I. Vasiljevic, S. Zakharov, M. Zolotas, R. Ambrus, K. Fetzer-Borelli, B. Burchfiel, H. Kress-Gazit, S. Feng, S. Ford, and R. Tedrake
+  A careful examination of large behavior models for multitask dexterous manipulation.
+  External Links: 2507.05331,
+  [Link](https://arxiv.org/abs/2507.05331)
+  Cited by: [§2](#S2.p2.1 "2 Related Work ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Walke et al. (2023)
+  H. Walke, K. Black, A. Lee, M. J. Kim, M. Du, C. Zheng, T. Zhao, P. Hansen-Estruch, Q. Vuong, A. He, V. Myers, K. Fang, C. Finn, and S. Levine
+  BridgeData v2: a dataset for robot learning at scale.
+  In Conference on Robot Learning (CoRL),
+  Cited by: [§2](#S2.p2.1 "2 Related Work ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Wang et al. (2023)
+  L. Wang, Y. Ling, Z. Yuan, M. Shridhar, C. Bao, Y. Qin, B. Wang, H. Xu, and X. Wang
+  GenSim: generating robotic simulation tasks via large language models.
+  In Arxiv,
+  Cited by: [§1](#S1.p3.1 "1 Introduction ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Wen et al. (2025)
+  J. Wen, Y. Zhu, J. Li, M. Zhu, K. Wu, Z. Xu, N. Liu, R. Cheng, C. Shen, Y. Peng, F. Feng, and J. Tang
+  TinyVLA: towards fast, data-efficient vision-language-action models for robotic manipulation.
+  External Links: 2409.12514,
+  [Link](https://arxiv.org/abs/2409.12514)
+  Cited by: [§2](#S2.p3.1 "2 Related Work ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Yenamandra et al. (2023)
+  S. Yenamandra, A. Ramachandran, K. Yadav, A. S. Wang, M. Khanna, T. Gervet, T. Yang, V. Jain, A. W. Clegg, J. M. Turner, Z. Kira, M. Savva, A. X. Chang, D. S. Chaplot, D. Batra, R. Mottaghi, Y. Bisk, and C. Paxton
+  HomeRobot: open‑vocabulary mobile manipulation.
+  In Proceedings of the 7th Conference on Robot Learning (CoRL),
+  Proceedings of Machine Learning Research, Vol. 229, pp. 1975–2011.
+  External Links: [Link](https://proceedings.mlr.press/v229/yenamandra23a.html)
+  Cited by: [§2](#S2.p2.1 "2 Related Work ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Zhou et al. (2023)
+  G. Zhou, V. Dean, M. K. Srirama, A. Rajeswaran, J. Pari, K. Hatch, A. Jain, T. Yu, P. Abbeel, L. Pinto, C. Finn, and A. Gupta
+  Train offline, test online: a real robot learning benchmark.
+  In Proceedings of the IEEE International Conference on Robotics and Automation (ICRA),
+  pp. 9197–9203.
+  External Links: [Document](https://dx.doi.org/10.1109/ICRA48891.2023.10160594),
+  [Link](https://doi.org/10.1109/ICRA48891.2023.10160594)
+  Cited by: [§2](#S2.p2.1 "2 Related Work ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Zhou et al. (2025)
+  Z. Zhou, P. Atreya, Y. L. Tan, K. Pertsch, and S. Levine
+  AutoEval: autonomous evaluation of generalist robot manipulation policies in the real world.
+  In Proceedings of the 9th Conference on Robot Learning (CoRL),
+  Proceedings of Machine Learning Research, Vol. 305, pp. 1997–2017.
+  External Links: [Link](https://proceedings.mlr.press/v305/zhou25a.html)
+  Cited by: [§2](#S2.p2.1 "2 Related Work ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+* Zhu et al. (2020)
+  Y. Zhu, J. Wong, A. Mandlekar, and R. Martín-Martín
+  Robosuite: a modular simulation framework and benchmark for robot learning.
+  In arXiv preprint arXiv:2009.12293,
+  Cited by: [§B.1](#A2.SS1.p1.1 "B.1 Physics and Rendering Engine ‣ Appendix B Simulation Infrastructure ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"),
+  [§1](#S1.p3.1 "1 Introduction ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"),
+  [§2](#S2.p1.1 "2 Related Work ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"),
+  [§2](#S2.p2.1 "2 Related Work ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+
+## Appendix A Use of Large Language Models
+
+We use the aid of large language models to create activity labels and task blueprints, using the process outlined by [Nasiriany et al. (2024)](#bib.bib19).
+We also use large language models for soliciting writing feedback for parts of this manuscript.
+
+## Appendix B Simulation Infrastructure
+
+### B.1 Physics and Rendering Engine
+
+RoboCasa365 is built on top of RoboSuite ([Zhu et al., 2020](#bib.bib5)), which uses the MuJoCo physics engine ([Todorov et al., 2012](#bib.bib4)). While MuJoCo’s core physics computations are CPU-based, we leverage GPU-based rendering. RoboCasa365 simulates at 20 Hz, with the simulation running approximately in real time, slightly faster or slower depending on scene complexity and hardware specifications. Multiple asynchronous environments can be run in parallel, allowing overall throughput to scale with the number of available CPU cores and GPUs.
+
+### B.2 Action Space
+
+We adopt the underlying controller from RoboCasa ([Nasiriany et al., 2024](#bib.bib19)). Specifically, we use an Operational Space Controller ([Khatib, 1995](#bib.bib6)) running at 20 Hz that commands the arm through seven action dimensions: three for translation, three for rotation, and one for gripper opening and closing. In addition, we include five action dimensions for mobile base translation and rotation, torso height control, and an action mode that gates mobile base control.
+
+## Appendix C Simulation Assets
+
+### C.1 3D objects
+
+We have added new objects across 57 categories: aluminum foil, basket, blender jug, cheese grater, chicken drumstick, cinnamon, colander, cookie dough ball, cream cheese stick, digital scale, dish brush, flour bag, glass cup, honey bottle, hotdog bun, ice cube, ice cube tray, jar, juice, kebab skewer, lemon wedge, lettuce, marshmallow, mayonnaise, measuring cup, mustard, non electric kettle, oil and vinegar bottle, oven tray, pancake, paprika, peeler, pickle slice, pitcher, pizza, pizza cutter, placemat, pot, reamer, salt and pepper shaker, sandwich bread, saucepan, saucepan lid, shrimp, soap dispenser, spray, strainer, straw, sugar cube, syrup bottle, tomato slice, tongs, tupperware, turkey slice, turmeric, whisk, and wooden spoon.
+
+### C.2 Interactive fixtures and appliances
+
+We report an inventory of all fixtures and appliances in Table [6](#A3.T6 "Table 6 ‣ C.2 Interactive fixtures and appliances ‣ Appendix C Simulation Assets ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+
+|  |  |
+| --- | --- |
+| Category | Unique models |
+| Blender | 22 |
+| Coffee machine | 48 |
+| Dishwasher | 25 |
+| Electric kettle | 25 |
+| Fridge | 50 |
+| Microwave | 50 |
+| Oven | 21 |
+| Sink | 49 |
+| Stand mixer | 25 |
+| Stove | 50 |
+| Toaster | 44 |
+| Toaster oven | 47 |
+| Total | 456 |
+
+Table 6: Inventory of fixtures and appliances
+
+## Appendix D Scenes
+
+We build 50 kitchen layouts modeled after 50 homes on sale on Zillow.com. These homes span locations in the Bay Area (California), Austin (Texas), Denver (Colorado), Boston (Massachusetts), and Atlanta (Georgia).
+
+## Appendix E Tasks
+
+### E.1 Atomic Tasks
+
+We have 65 atomic tasks:
+AdjustToasterOvenTemperature,
+AdjustWaterTemperature,
+CheesyBread,
+CloseBlenderLid,
+CloseCabinet,
+CloseDishwasher,
+CloseDrawer,
+CloseElectricKettleLid,
+CloseFridge,
+CloseFridgeDrawer,
+CloseMicrowave,
+CloseOven,
+CloseStandMixerHead,
+CloseToasterOvenDoor,
+CoffeeServeMug,
+CoffeeSetupMug,
+LowerHeat,
+MakeIcedCoffee,
+NavigateKitchen,
+OpenBlenderLid,
+OpenCabinet,
+OpenDishwasher,
+OpenDrawer,
+OpenElectricKettleLid,
+OpenFridge,
+OpenFridgeDrawer,
+OpenMicrowave,
+OpenOven,
+OpenStandMixerHead,
+OpenToasterOvenDoor,
+PackDessert,
+PickPlaceCabinetToCounter,
+PickPlaceCounterToBlender,
+PickPlaceCounterToCabinet,
+PickPlaceCounterToDrawer,
+PickPlaceCounterToMicrowave,
+PickPlaceCounterToOven,
+PickPlaceCounterToSink,
+PickPlaceCounterToStandMixer,
+PickPlaceCounterToStove,
+PickPlaceCounterToToasterOven,
+PickPlaceDrawerToCounter,
+PickPlaceFridgeDrawerToShelf,
+PickPlaceFridgeShelfToDrawer,
+PickPlaceMicrowaveToCounter,
+PickPlaceSinkToCounter,
+PickPlaceStoveToCounter,
+PickPlaceToasterOvenToCounter,
+PickPlaceToasterToCounter,
+PreheatOven,
+SlideDishwasherRack,
+SlideOvenRack,
+SlideToasterOvenRack,
+StartCoffeeMachine,
+TurnOffMicrowave,
+TurnOffSinkFaucet,
+TurnOffStove,
+TurnOnBlender,
+TurnOnElectricKettle,
+TurnOnMicrowave,
+TurnOnSinkFaucet,
+TurnOnStove,
+TurnOnToaster,
+TurnOnToasterOven, and
+TurnSinkSpout.
+
+### E.2 Target tasks
+
+We provide an overview for the target tasks across Tables [7](#A5.F7 "Figure 7 ‣ E.2 Target tasks ‣ Appendix E Tasks ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"), [8](#A5.F8 "Figure 8 ‣ E.2 Target tasks ‣ Appendix E Tasks ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots"), and [9](#A5.F9 "Figure 9 ‣ E.2 Target tasks ‣ Appendix E Tasks ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+
+|  |  |  |  |  |
+| --- | --- | --- | --- | --- |
+| Activity | Task | # Subtasks | MoMa req. | Description |
+| Atomic | CloseBlenderLid | 1 | No | Close the lid blender by securely placing the lid on top. |
+| Atomic | CloseFridge | 1 | No | Close the fridge door(s). |
+| Atomic | CloseToasterOvenDoor | 1 | No | Close the toaster oven door. |
+| Atomic | CoffeeSetupMug | 1 | No | Pick the mug from the counter and place it under the coffee machine dispenser. |
+| Atomic | NavigateKitchen | 1 | Yes | Navigate to the [*kitchen location*]. |
+| Atomic | OpenCabinet | 1 | No | Open the cabinet door(s). |
+| Atomic | OpenDrawer | 1 | No | Open the [*left/right*] drawer. |
+| Atomic | OpenStandMixerHead | 1 | No | Open the stand mixer head. |
+| Atomic | PickPlaceCounterToCabinet | 1 | No | Pick the item from the counter and place it in the cabinet. |
+| Atomic | PickPlaceCounterToStove | 1 | No | Pick the item from the plate and place it in the pan. |
+| Atomic | PickPlaceDrawerToCounter | 1 | No | Pick the item from the drawer and place it on the counter. |
+| Atomic | PickPlaceSinkToCounter | 1 | No | Pick the item from the sink and place it on the container located on the counter. |
+| Atomic | PickPlaceToasterToCounter | 1 | No | Place the toasted item on a plate. |
+| Atomic | SlideDishwasherRack | 1 | No | Fully slide the top dishwasher rack [*in/out*]. |
+| Atomic | TurnOffStove | 1 | No | Turn off the [*burner location*] burner of the stove. |
+| Atomic | TurnOnElectricKettle | 1 | No | Press down the lever to turn on the electric kettle. |
+| Atomic | TurnOnMicrowave | 1 | No | Press the start button on the microwave. |
+| Atomic | TurnOnSinkFaucet | 1 | No | Turn on the sink faucet. |
+
+Figure 7: Post-training Atomic-Seen Tasks (18)
+
+Note: The “MoMa req.” column indicates whether the task requires Mobile Manipulation or base navigation.
+
+|  |  |  |  |  |
+| --- | --- | --- | --- | --- |
+| Activity | Task | # Subtasks | MoMa req. | Description |
+| Serving beverages | DeliverStraw | 4 | Yes | Take a straw from the drawer in front and place it inside the glass cup on the dining counter. |
+| Toasting bread | GetToastedBread | 4 | Yes | Start the toaster. Once the lever pops up, take the bread to the plate on the dining counter. |
+| Brewing | KettleBoiling | 2 | No | Pick the kettle from the counter and place it on a stove burner. Then turn the burner on. |
+| Loading dishwasher | LoadDishwasher | 3 | No | Pick up the items from the counter, place them in the dishwasher, and close the dishwasher door. |
+| Packing lunches | PackIdenticalLunches | 15 | Yes | Place two identical items of each object in each tupperware on the nearby counter, to pack two identical lunches. |
+| Washing dishes | PreSoakPan | 3 | No | Pick the pan and sponge and place them into the sink. Then turn on the water. |
+| Brewing | PrepareCoffee | 2 | No | Pick the mug from the cabinet, place it under the coffee machine dispenser, and press the start button. |
+| Cleaning sink | RinseSinkBasin | 2 | No | Turn on the sink and manuever the spout to wash all locations of the sink basin. |
+| Sanitizing cutting boards | ScrubCuttingBoard | 2 | Yes | Pick up the sponge from the counter and clean the cutting board by briefly scrubbing or pressing down on the cutting board. Once finished, release the sponge. |
+| Frying | SearingMeat | 3 | Yes | Grab the pan from the cabinet and place it on the [*burner location*] burner on the stove. Then place the item on the stove and turn the burner on. |
+| Slicing meat | SetUpCuttingStation | 2 | Yes | Pick up the knife from the drawer and place it on the cutting board. Then place the meat from the plate to the cutting board. |
+| Organizing dishes and containers | StackBowlsCabinet | 2 | Yes | Pick up the bowls on the counter and stack them on top of one another in the open cabinet. Place the smaller bowl on top of the larger bowl. |
+| Steaming food | SteamInMicrowave | 6 | Yes | Pick the item from the sink and place it in the bowl. Then pick the bowl and place it in the microwave. Then close the microwave door and press the start button. |
+| Sauteing vegetables | StirVegetables | 4 | Yes | Put the items in the pot. Retrieve the spatula and lightly stir the vegetables in the pot. |
+| Storing leftovers | StoreLeftoversInBowl | 5 | Yes | Pick the chicken drumstick and item from their plates and place them in the bowl. Then put the bowl in the fridge. |
+| Making salads | WashLettuce | 2 | No | Wash the lettuce in the sink by running water over it. |
+
+Figure 8: Post-training Composite-Seen Tasks (16)
+
+|  |  |  |  |  |
+| --- | --- | --- | --- | --- |
+| Activity | Task | # Subtasks | MoMa req. | Description |
+| Setting the table | ArrangeBreadBasket | 5 | Yes | Open the cabinet, pick up the item from the cabinet and place it in the basket. Then move the basket to the dining counter. |
+| Brewing | ArrangeTea | 3 | No | Pick the kettle from the counter and place it on the tray. Then pick the mug from the cabinet and place it on the tray. Then close the cabinet doors. |
+| Making toast | BreadSelection | 2 | Yes | From the different types of pastries on the counter, select a croissant and place it on the cutting board. Then retrieve a jar of jam from the cabinet and place it alongside the croissant on the cutting board. |
+| Arranging condiments | CategorizeCondiments | 2 | No | Put the shaker and condiment bottle from the counter next to their counterparts in the cabinet. |
+| Chopping vegetables | CuttingToolSelection | 2 | No | Place the appropriate cutting tool for cutting the item skin on the cutting board. |
+| Garnishing dishes | GarnishPancake | 4 | Yes | Take the strawberry from the fridge and place it on top of the pancake, located on the dining counter. |
+| Arranging cabinets | GatherTableware | 4 | Yes | Gather all objects into one cabinet and sort the glasses and bowls to opposite sides. |
+| Preparing sandwiches | HeatKebabSandwich | 6 | Yes | Pick up the kebab skewer and baguette bread, and place them inside the toaster oven. Close the toaster oven door and start by setting the timer. |
+| Adding ice to beverages | MakeIceLemonade | 5 | Yes | Grab a lemon wedge from the fridge and one ice cube from the ice bowl, and put them in the glass of lemonade. |
+| Serving food | PanTransfer | 3 | No | Pick up the pan and dump the vegetables in it onto the plate. Then return the pan to the stove. |
+| Portioning meals | PortionHotDogs | 4 | Yes | Place one bun and one sausage from the bowl on each plate. |
+| Organizing recycling | RecycleBottlesByType | 3 | Yes | Move the plastic bottles in the middle to the plastics group, and the glass bottles in the middle to the glass group. |
+| Managing freezer space | SeparateFreezerRack | 7 | Yes | Take the meat container that has the meat item(s) and place it on the second highest rack of the freezer. Then take the vegetable container that has the vegetable(s) and place it on the highest rack of the freezer. |
+| Reheating food | WaffleReheat | 4 | Yes | Open the microwave, place the bowl with waffle inside the microwave, then close the microwave door and turn it on. |
+| Washing produce | WashFruitColander | 4 | No | Put the colander in the sink, put the item in the colander, and turn on the sink faucet and pour water over the colander. |
+| Measuring ingredients | WeighIngredients | 2 | No | Pick the item and place it on the digital scale for weighing, and close the cabinet. |
+
+Figure 9: Post-training Composite-Unseen Tasks (16)
+
+## Appendix F Datasets
+
+We present an overview of our datasets in Table [7](#A6.T7 "Table 7 ‣ Appendix F Datasets ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+
+|  |  |  |  |  |
+| --- | --- | --- | --- | --- |
+| Setting | Num Tasks | Num Scenes | Demos per Task | Dataset Size (hrs) |
+| Pretraining (Human) | 300 | 2500 | 100 | 404 |
+| Pretraining (MimicGen) | 60 | 2500 | 10,000 | 1615 |
+| Target (Human) | 50 | 10 | 500 | 208 |
+
+Table 7: Dataset statistics across pretraining and target settings.
+
+For each demonstration, we store the language instruction, proprioceptive information (robot base pose, robot end effector pose, gripper state information), images from three cameras (wrist camera, left third-person camera, right third-person camera), and the actions.
+
+## Appendix G Policy Learning
+
+### G.1 Model Architectures and Training Protocol
+
+Our experiments focus on training vision-based models. The model takes as input a combination of low-level proprioceptive information (base pose, end effector pose, gripper state), task instruction language, and camera images (one wrist camera image and two third-person camera images).
+
+Each of the camera images is at 256×256256\times 256 resolution, and we show examples of the camera views in Figure [10](#A7.F10 "Figure 10 ‣ G.1 Model Architectures and Training Protocol ‣ Appendix G Policy Learning ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+
+![Refer to caption](2603.04356v1/figures/cam_images/cam_images_v1.png)
+
+Figure 10: Camera Images. Camera images from three views (rendered at 256×256256\times 256 resolution are fed into the model.)
+
+We experiment with four models:
+
+Diffusion Policy.
+Diffusion Policy models trajectory generation as a conditional denoising process in action space, recovering actions from noisy expert trajectories to handle multi-modal robot behaviors.
+We use an [open source diffusion policy codebase](https://github.com/real-stanford/universal_manipulation_interface) and add language conditioning by fusing CLIP-based language embeddings ([Radford et al., 2021](#bib.bib45)) with the ResNet visual encoder via FiLM conditioning layers ([Perez et al., 2018](#bib.bib46)).
+We use the transformer diffusion variant, with a 12-layer transformer with an embedding dimension of 512512.
+We train the model with a batch size of 192 and train for 250k steps for the multi-task learning experiment.
+
+𝝅𝟎/𝝅0.5.\bm{\pi\_{0}/\pi\_{0.5}.} π0\pi\_{0} and π0.5\pi\_{0.5} are vision-language-action models which use PaLI Gemma ([Beyer et al., 2024](#bib.bib47)) as the underlying VLM and fuses an action expert to output robot actions via flow matching ([Lipman et al., 2023](#bib.bib48)).
+We use the official [open source repository](https://github.com/Physical-Intelligence/openpi).
+We use the default full fine-tuning configuration, and we use a batch size of 6464 (the highest batch size we can fit on a GH200 GPU).
+For the multi-task learning experiment, we train the model for 75k steps (48 hours of training time on a GH200 GPU).
+
+GR00T N1.5. GR00T N1.5 is a vision-language-action model which uses a system1-system2 architecture, with the Eagle2 VLM ([Li et al., 2025](#bib.bib49)) serving as the high-level encoder (system2) and an action decoder to produce actions via flow matching (system1).
+We use the official [open source repository](https://github.com/NVIDIA/Isaac-GR00T).
+For all experiments, we freeze the vision encoder and language encoder (which are the default settings from the open source codebase), and we use a batch size of 128128 (the highest batch size we can fit on a GH200 GPU).
+For the multi-task learning experiments, we train for 120k steps.
+For the foundation model training experiments, we pretrain for 80k steps and fine-tune on target data for 60k steps.
+Finally, for lifelong learning experiments, we train stage1 for 100k steps, followed by 60k steps for all subsequent stages of training.
+Generally, we find these settings to be sufficient to allow for model convergence.
+
+### G.2 Evaluation Protocol
+
+After training, we evaluate the model at a specified checkpoint on a suite of evaluation tasks.
+For each evaluation task, we run 30 trials for a specified maximum number of timesteps (the maximum duration is task-dependent).
+If during this duration the agent achieves the task success condition (binary condition), the episode is counted as a success; otherwise, a failure.
+We report the average success rate across tasks.
+
+## Appendix H Additional Experiments
+
+### H.1 Pretraining Scene Diversity
+
+Our pretraining data spans 2,500 kitchen scenes (50 layouts ×\times 50 styles), and we compare to restricting pretraining data to 25 scenes (5 layouts ×\times 5 styles), and 5 scenes (5 layouts ×\times 1 style).
+To run a fair comparison across these settings, we use MimicGen to generate demonstrations for each setting, generating data across 17 atomic tasks in pretraining kitchens.
+We run zero-shot evaluations on the 10 fixed target kitchen scenes, and also try learning on the atomic target data with 50 demonstrations per task.
+See Table [8](#A8.T8 "Table 8 ‣ H.1 Pretraining Scene Diversity ‣ Appendix H Additional Experiments ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots") for results.
+For zero-shot evaluation, we observe notable performance gains as the number of pretraining scenes increases.
+These gains also hold in subsequent target task fine-tuning, highlighting the need for diverse pretraining data.
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+|  | Pretraining Data | | |
+|  | 5 Scenes | 25 Scenes | 2500 Scenes |
+| Zero-shot Evaluation | 29.6 | 39.6 | 44.7 |
+| + Fine-tuning on Atomic Target Data (10%) | 53.3 | 56.7 | 62.4 |
+
+Table 8: Pretraining scene diversity results. Increasing the composition of scenes in pretraining data improves downstream task performance.
+
+### H.2 Robustness Evaluations
+
+In order to examine the generalization capabilities endowed by pretraining on our data, we perform a set of robustness evaluations on the GR00T N1.5 model trained on the full pretraining and target mixture. We perturb an aspect of the model’s input and evaluate it on our Composite-Seen and Composite-Unseen tasks. Specifically, we look at the following perturbations:
+
+* •
+
+  Novel Language: We prompt an LLM for novel but semantically similar task instructions.
+* •
+
+  Novel Joint Angles: We sample Gaussian noise and add it to the starting joint angles of the robot.
+* •
+
+  Novel Base Pose: We sample Gaussian noise and add it to the starting position and yaw of the robot base.
+* •
+
+  Novel Camera Pose: We sample Gaussian noise and add it to the default third-person and wrist camera poses.
+
+Table 9: Evaluation of robustness under different perturbations.
+
+|  |  |  |  |  |  |
+| --- | --- | --- | --- | --- | --- |
+| Task Split | No Perturbation | Novel Language | Camera Perturbations | Initial Joint Noise | Initial Base Pose Noise |
+| Composite-Seen | 40.6 | 38.3 | 28.8 | 27.9 | 31.2 |
+| Composite-Unseen | 42.1 | 39.2 | 31.5 | 32.1 | 30.2 |
+
+We find that the model is robust to language variations, but can suffer from novel camera poses, joint angles, and base poses.
+
+### H.3 Joint Co-Training of Pretraining and Target Data
+
+As an extension to the foundation model training experiments, we examine a separate variant in which we train on all pre-training data and 100% of the target data jointly in one single phase. We trained the model for 120k steps and report the resulting task success rates in the target kitchens as follows:
+
+* •
+
+  Atomic-Seen: 44.1%
+* •
+
+  Composite-Seen: 9.0%
+* •
+
+  Composite-Unseen: 11.7%
+* •
+
+  Average: 22.5%
+
+Compared to our two-stage learning framework (pretraining first, followed by fine-tuning on target data), performance under this co-training regime is substantially lower. This result underscores the importance of a dedicated fine-tuning phase for learning highly performant policies tailored to the target tasks.
+
+### H.4 LoRA Fine-tuning
+
+For the multi-task learning experiments in section 4.2, we ran GR00T N1.5 with LoRA fine-tuning, trained for the same number of steps, batch size, etc, as the full fine-tuning variant. The results are as follows:
+
+Table 10: Policy success rates (%) comparing full vs LoRA fine-tuning for GR00T N1.5.
+
+|  |  |  |  |  |
+| --- | --- | --- | --- | --- |
+|  | Atomic-Seen | Composite-Seen | Composite-Unseen | Average |
+| Full fine-tuning | 43.0 | 9.6 | 4.4 | 20.0 |
+| LoRA fine-tuning | 2.4 | 0.2 | 0.8 | 1.2 |
+
+Full fine-tuning is critical to model performance.
+
+## Appendix I Additional Analysis
+
+### I.1 Foundation Model Training Analysis
+
+We break down the per-task task performance for the best performing variant, pretraining followed by fine-tuning on target data (on 100% of data), in Table [11](#A9.T11 "Table 11 ‣ I.1 Foundation Model Training Analysis ‣ Appendix I Additional Analysis ‣ RoboCasa365: A Large-Scale Simulation Framework for Training and Benchmarking Generalist Robots").
+Among the Atomic-Seen tasks, the worst-performing tasks are TurnOffStove and CloseBlenderLid, which involve high precision and dexterity.
+However, for Composite-Seen and Composite-Unseen tasks, the worst-performing tasks span many diverse characteristics. We run a qualitative analysis, outlining common failure modes for the tasks where the model performs at a 30% or less success rate:
+
+* •
+
+  SteamInMicrowave: difficulty placing the bowl in the microwave, either placing on the edge of the microwave or dropping the bowl in the air right before placing it in the microwave
+* •
+
+  SearingMeat: typically does not turn on the stove burner correctly, or attempts to turn on the incorrect stove burner; or does not place the pan on a valid location on the stovetop
+* •
+
+  PackIdenticalLunches: unreliable picking from fridge; not moving to the tupperware to place items; placing items in wrong tupperware
+* •
+
+  PrepareCoffee: often does not place the coffee mug correctly under the coffee machine
+* •
+
+  DeliverStraw: range of failures: difficulty opening drawers, difficulty transporting straw (dropping it), difficulty placing straw into cup
+* •
+
+  GetToastedBread: often does not press down on lever fully; sometimes presses down lever but then acts randomly
+* •
+
+  PortionHotDogs: unreliable picks from crowded bowl; unreliable place by placing item on counter instead of plate; placing items on the wrong plate
+* •
+
+  PanTransfer: generally picks up the pan but does not reliably flip the contents of the pan into the plate; this is a dynamic task that’s quite unique, does not have much overlap with other tasks in the benchmark
+* •
+
+  HeatKebabSandwich: often fails to pull out the toaster rack; other times often after placing the first item on the rack inadvertently pushes the rack in by accident and does not place the second item in
+* •
+
+  CategorizeCondiments: pick and place is not reliable, or does not place matching condiments next to each other
+* •
+
+  SeparateFreezerRack: often fails to reliably place the tupperware into the freezer, as the freezer is a tight space
+* •
+
+  GatherTableware: must locate the other mug from the kitchen, and bring it back; the navigation ability here is not reliable; also sometimes does not place the mug inside the cabinet, drops it in the air without reaching far into the cabinet.
+
+|  |  |  |  |
+| --- | --- | --- | --- |
+| Task | Success Rate (%) | Stages | MoMa Required |
+| Atomic-Seen | | | |
+| TurnOnElectricKettle | 93 | 1 | No |
+| OpenStandMixerHead | 90 | 1 | No |
+| CloseToasterOvenDoor | 87 | 1 | No |
+| OpenCabinet | 87 | 1 | No |
+| SlideDishwasherRack | 87 | 1 | No |
+| PickPlaceToasterToCounter | 73 | 1 | No |
+| TurnOnMicrowave | 70 | 1 | No |
+| OpenDrawer | 70 | 1 | No |
+| PickPlaceSinkToCounter | 70 | 1 | No |
+| PickPlaceCounterToStove | 70 | 1 | No |
+| CloseFridge | 67 | 1 | No |
+| TurnOnSinkFaucet | 63 | 1 | No |
+| PickPlaceCounterToCabinet | 63 | 1 | No |
+| CoffeeSetupMug | 60 | 1 | No |
+| NavigateKitchen | 60 | 1 | Yes |
+| PickPlaceDrawerToCounter | 50 | 1 | No |
+| TurnOffStove | 37 | 1 | No |
+| CloseBlenderLid | 37 | 1 | No |
+| Composite-Seen | | | |
+| StackBowlsCabinet | 83 | 2 | Yes |
+| PreSoakPan | 70 | 3 | No |
+| ScrubCuttingBoard | 70 | 2 | Yes |
+| WashLettuce | 67 | 2 | No |
+| RinseSinkBasin | 60 | 2 | No |
+| KettleBoiling | 53 | 2 | No |
+| LoadDishwasher | 47 | 3 | No |
+| StoreLeftoversInBowl | 43 | 5 | Yes |
+| SetUpCuttingStation | 33 | 2 | Yes |
+| StirVegetables | 33 | 4 | Yes |
+| SteamInMicrowave | 30 | 6 | Yes |
+| SearingMeat | 27 | 3 | Yes |
+| PackIdenticalLunches | 17 | 15 | Yes |
+| PrepareCoffee | 13 | 2 | No |
+| DeliverStraw | 3 | 4 | Yes |
+| GetToastedBread | 0 | 4 | Yes |
+| Composite-Unseen | | | |
+| RecycleBottlesByType | 87 | 3 | Yes |
+| WaffleReheat | 83 | 4 | Yes |
+| ArrangeBreadBasket | 77 | 5 | Yes |
+| WeighIngredients | 67 | 2 | No |
+| BreadSelection | 60 | 2 | Yes |
+| CuttingToolSelection | 47 | 2 | No |
+| GarnishPancake | 47 | 4 | Yes |
+| ArrangeTea | 43 | 3 | No |
+| WashFruitColander | 40 | 4 | No |
+| MakeIceLemonade | 40 | 5 | Yes |
+| PortionHotDogs | 23 | 4 | Yes |
+| PanTransfer | 20 | 3 | No |
+| HeatKebabSandwich | 13 | 6 | Yes |
+| CategorizeCondiments | 10 | 2 | No |
+| SeparateFreezerRack | 10 | 7 | Yes |
+| GatherTableware | 7 | 4 | Yes |
+
+Table 11: Foundation Model Training Results.
+
+Experimental support, please
+[view the build logs](./2603.04356v1/__stdout.txt)
+for errors. Generated by
+[L
+A
+T
+E
+xml
+![[LOGO]](data:image/png;base64...)](https://math.nist.gov/~BMiller/LaTeXML/).
+
+## Instructions for reporting errors
+
+We are continuing to improve HTML versions of papers, and your feedback helps enhance accessibility and mobile
+support. To report errors in the HTML that will help us improve conversion and rendering, choose any of the
+methods listed below:
+
+* Click the "Report Issue" (
+
+  ) button, located in the page header.
+
+**Tip:** You can select the relevant text first, to include it in your report.
+
+Our team has already identified [the following issues](https://github.com/arXiv/html_feedback/issues). We appreciate your time reviewing and reporting rendering errors we
+may not have found yet. Your efforts will help us improve the HTML versions for all readers, because disability
+should not be a barrier to accessing research. Thank you for your continued support in championing open access for
+all.
+
+Have a free development cycle? Help support accessibility at arXiv! Our collaborators at LaTeXML maintain a [list of packages that need conversion](https://github.com/brucemiller/LaTeXML/wiki/Porting-LaTeX-packages-for-LaTeXML), and welcome [developer contributions](https://github.com/brucemiller/LaTeXML/issues).
+
+We gratefully acknowledge support from
+our **major funders**,
+[**member institutions**](https://info.arxiv.org/about/ourmembers.html), ,
+and all contributors.
+
+[About](https://info.arxiv.org/about)
+·
+[Help](https://info.arxiv.org/help)
+·
+[Contact](https://info.arxiv.org/help/contact.html)
+·
+[Subscribe](https://info.arxiv.org/help/subscribe)
+·
+[Copyright](https://info.arxiv.org/help/license/index.html)
+·
+[Privacy](https://info.arxiv.org/help/policies/privacy_policy.html)
+·
+[Accessibility](https://info.arxiv.org/help/web_accessibility.html)
+·
+[Operational Status (opens in new tab)](https://status.arxiv.org)
+
+Major funding support from
+
+[![Simons Foundation](/static/base/1.0.1/images/funders/simons-foundation.png)](https://www.simonsfoundation.org/)
+[![Simons Foundation International](/static/base/1.0.1/images/funders/simons-foundation-international.png)](https://www.sfi.org.bm/)
+[![Schmidt Sciences](/static/base/1.0.1/images/funders/schmidt-sciences.png)](https://www.schmidtsciences.org/)
