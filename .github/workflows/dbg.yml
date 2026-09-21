@@ -1,0 +1,14 @@
+name: DBG
+on:
+  discussion:
+    types: [created]
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "event_name=${{ github.event_name }}"
+          echo "sender_type=${{ github.event.sender.type }}"
+          echo "sender_login=${{ github.event.sender.login }}"
+          echo "assoc=${{ github.event.discussion.author_association }}"
+          echo "body_has_oh=${{ contains(github.event.discussion.body, 'oh') }}"
