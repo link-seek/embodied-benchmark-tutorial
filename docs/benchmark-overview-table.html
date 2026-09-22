@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>具身智能榜单横向对照表（9 榜单）</title>
+<style>
+  :root{
+    --bg:#f4f5f3;
+    --surface:#ffffff;
+    --fg:#16181d;
+    --muted:#5b6470;
+    --border:#dfe3e6;
+    --accent:#0f766e;
+    --accent-ink:#0b5f59;
+    --low:#137333;
+    --low-bg:#e6f4ea;
+    --mid:#8a5a00;
+    --mid-bg:#fef3d8;
+    --high:#b3261e;
+    --high-bg:#fcecea;
+    --font-display:"Songti SC","Noto Serif SC","SimSun",serif;
+    --font-body:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:var(--bg);color:var(--fg);
+    font-family:var(--font-body);font-size:15px;line-height:1.75;letter-spacing:0;
+  }
+  .page{max-width:1560px;margin:0 auto;padding:28px 20px 64px}
+  header.hero{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:26px 28px;margin-bottom:16px}
+  .eyebrow{display:inline-block;font-size:12px;letter-spacing:.08em;color:var(--accent-ink);border:1px solid var(--accent);border-radius:999px;padding:3px 12px;margin-bottom:12px}
+  h1{font-family:var(--font-display);font-size:34px;line-height:1.35;margin:0 0 8px;font-weight:700}
+  .sub{color:var(--muted);font-size:14px;line-height:1.7;margin:0;max-width:90ch}
+  .sub code{font-size:12.5px;background:#eef1f3;border-radius:4px;padding:1px 6px}
+  .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:16px}
+  .toolbar label{font-size:13px;color:var(--muted);letter-spacing:.02em}
+  .toolbar input[type="search"],.toolbar select{
+    font:inherit;font-size:14px;color:var(--fg);background:#fff;
+    border:1px solid var(--border);border-radius:8px;padding:9px 12px;min-height:44px;
+  }
+  .toolbar input[type="search"]{flex:1;min-width:220px}
+  .toolbar select{min-width:150px}
+  :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+  .btn{font:inherit;font-size:14px;letter-spacing:.02em;border-radius:8px;min-height:44px;padding:9px 16px;cursor:pointer;border:1px solid transparent}
+  .btn-primary{background:var(--accent);color:#fff;font-weight:600}
+  .btn-primary:hover{background:var(--accent-ink)}
+  .btn-ghost{background:#fff;color:var(--fg);border-color:var(--border)}
+  .btn-ghost:hover{border-color:var(--accent);color:var(--accent-ink)}
+  .count{margin-left:auto;font-size:13px;color:var(--muted)}
+  .table-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+  .table-scroll{overflow:auto;max-height:72vh}
+  table{border-collapse:separate;border-spacing:0;width:100%;min-width:1980px;font-size:14px;line-height:1.75}
+  thead th{
+    position:sticky;top:0;z-index:3;background:#101828;color:#fff;
+    text-align:left;font-weight:600;padding:13px 14px;white-space:nowrap;border-bottom:1px solid #101828;
+  }
+  tbody th,.col-name{
+    position:sticky;left:0;z-index:2;background:#f8fafb;
+    font-weight:700;white-space:nowrap;padding:13px 14px;border-right:1px solid var(--border);
+  }
+  tbody tr:nth-child(even) .col-name{background:#eef4f2}
+  td{padding:13px 14px;vertical-align:top;border-bottom:1px solid var(--border)}
+  tbody tr:nth-child(even) td{background:#fbfcfc}
+  td.c-scale{min-width:320px;max-width:440px}
+  td.c-scale .total{font-weight:700}
+  td.c-scale ul.breakdown{margin:8px 0 0;padding-left:20px;font-size:13px;line-height:1.7}
+  td.c-scale ul.breakdown li{margin-bottom:4px}
+  td.c-metric{min-width:280px;max-width:340px}
+  td.c-sota{min-width:380px;max-width:460px}
+  td.c-pos{min-width:280px;max-width:340px}
+  td.c-engine{min-width:220px}
+  .cost{display:inline-block;white-space:nowrap;font-weight:600;font-size:13px;border-radius:999px;padding:3px 12px}
+  .cost-low{background:var(--low-bg);color:var(--low)}
+  .cost-mid{background:var(--mid-bg);color:var(--mid)}
+  .cost-high{background:var(--high-bg);color:var(--high)}
+  td.c-env{min-width:300px;max-width:380px}
+  .envline{display:block;margin-bottom:6px}
+  .envline:last-child{margin-bottom:0}
+  .env-k{display:inline-block;font-size:12px;font-weight:700;color:var(--accent-ink);border:1px solid var(--accent);border-radius:6px;padding:0 8px;margin-right:6px;white-space:nowrap}
+  td.c-time{min-width:150px}
+  .days{display:inline-block;white-space:nowrap;font-weight:700;font-size:14px;background:#eef4f2;color:var(--accent-ink);border-radius:999px;padding:3px 14px}
+  .days-note{display:block;font-weight:400;font-size:12.5px;color:var(--muted);margin-top:6px;line-height:1.7}
+  .sota-strong{font-weight:700}
+  .warn{color:#8a5a00;font-weight:600}
+  .notes{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 24px;margin-top:16px}
+  .notes h2{font-family:var(--font-display);font-size:20px;line-height:1.35;margin:0 0 10px}
+  .notes li{margin-bottom:8px;max-width:110ch}
+  .copy-tip{font-size:13px;color:var(--muted);margin:12px 2px 0}
+  @media (max-width:760px){
+    h1{font-size:25px}
+    .count{margin-left:0;width:100%}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="hero" data-od-id="overview-header">
+    <span class="eyebrow">BENCHMARK 横向对照 · 原文转制</span>
+    <h1>9 个具身智能榜单横向对照表</h1>
+    <p class="sub">整理日期 2026-09-20 · 内容转自 <code>benchmark-tutorial/00-overview.md</code>「横向对照表」（定位 / 引擎 / 规模 / 指标 / SOTA 逐字照录，仅调列序，SOTA 移末列为备注）。「环境 + 技术栈」综合各分章引擎与复现路径节整理；「预估搭建时间」以 RoboTwin 两周实测（按 10 个工作日计 10 人天）为锚点、其余按原成本档同比例折算，待按实际团队与机器校准。</p>
+  </header>
+
+  <div class="toolbar" data-od-id="table-toolbar">
+    <label for="q">关键词筛选</label>
+    <input type="search" id="q" placeholder="例如：双臂 / 厨房 / GPU / LIBERO" autocomplete="off">
+    <button class="btn btn-primary" id="dl" data-od-id="download-csv">下载 CSV（可用 Excel 打开）</button>
+    <button class="btn btn-ghost" id="cp" data-od-id="copy-tsv">复制 TSV</button>
+    <span class="count" id="count" aria-live="polite">共 9 行</span>
+  </div>
+
+  <div class="table-card" data-od-id="comparison-table-card">
+    <div class="table-scroll">
+      <table id="tbl" data-od-id="comparison-table">
+        <thead>
+          <tr>
+            <th scope="col">榜单</th>
+            <th scope="col">定位</th>
+            <th scope="col">引擎</th>
+            <th scope="col">规模（任务数 / 演示数）</th>
+            <th scope="col">指标</th>
+            <th scope="col">环境 + 技术栈</th>
+            <th scope="col">预估搭建时间</th>
+            <th scope="col">备注（SOTA + 日期）</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr data-cost="low" data-od-id="row-libero">
+            <th scope="row" class="col-name">LIBERO</th>
+            <td class="c-pos">终身机器人学习的任务注册与遗忘度量，测知识迁移与灾难性遗忘，不测真机迁移</td>
+            <td class="c-engine">MuJoCo + robosuite / Franka Panda</td>
+            <td class="c-scale"><span class="total">总计 130 个语言条件任务，分 4 组套件</span>
+              <ul class="breakdown">
+                <li>LIBERO-SPATIAL / OBJECT / GOAL 各 10 个（分别只变空间关系 / 物体种类 / 任务目标）</li>
+                <li>LIBERO-100（100 个）= LIBERO-90 预训练数据源 + LIBERO-LONG 10 个长时程任务</li>
+                <li>每任务 50 条人工遥操作演示；演示总数以仓库数据配置为准</li>
+              </ul>
+            </td>
+            <td class="c-metric">稀疏成功率 + 混淆矩阵 + 前向迁移（含负向遗忘与成功率曲线面积，定义见论文评估节）</td>
+            <td class="c-env"><span class="envline"><span class="env-k">环境</span>纯仿真，单机 CPU 可跑（MuJoCo + robosuite 1.4.0）</span><span class="envline"><span class="env-k">技术栈</span>Python + BDDL 任务定义 + FWT / NBT / AUC 评测脚本；演示数据下载脚本 / HuggingFace 镜像 + notebooks 上手示例</span></td>
+            <td class="c-time"><span class="days">3–5 人天</span><span class="days-note">锚定折算·待确认（原成本档：低）</span></td>
+            <td class="c-sota">未公开单一榜首分数（2026-09-20 整理，出处：论文 Table 1 / Table 2 基线对比，ER 与 PackNet 等方法按套件报告）</td>
+          </tr>
+          <tr data-cost="low" data-od-id="row-calvin">
+            <th scope="row" class="col-name">CALVIN</th>
+            <td class="c-pos">语言条件长时序操作协议，测 5 步链式执行与跨环境泛化，不测大规模真机排名</td>
+            <td class="c-engine">PyBullet + PlayTable 操作台 / 7 自由度机械臂</td>
+            <td class="c-scale"><span class="total">约 34 类原子操作 + 1000 条 5 步链 + 4 个环境</span>
+              <ul class="breakdown">
+                <li>原子操作 34：旋转 6、推动 6、滑门 2、抽屉 2、抓取 9、放置 2、灯光 4、推入抽屉 1、堆叠 / 拆塔 2</li>
+                <li>1000 条 5 步指令链（去环、去冗余、过滤不可行）；4 个环境 A / B / C / D</li>
+                <li>约 24 小时 VR 遥操作数据（每环境约 6 小时），约 240 万交互步，可重标定约 4000 万短时程窗口；众包语言标注 400 余条，仅约 1% 数据配语言</li>
+              </ul>
+            </td>
+            <td class="c-metric">LH-MTLC 链式评估：SR_1 至 SR_5 + 平均成功链长（定义见论文评估节）</td>
+            <td class="c-env"><span class="envline"><span class="env-k">环境</span>PyBullet + EGL 离屏渲染，单机可跑（GPU 可选），7 自由度仿真臂操作台</span><span class="envline"><span class="env-k">技术栈</span>数据集划分下载脚本 + evaluate_policy.py 评测入口 + slurm 集群训练脚本 + RL 示例 notebook</span></td>
+            <td class="c-time"><span class="days">5–8 人天</span><span class="days-note">锚定折算·待确认（原成本档：低；数据下载体量大）</span></td>
+            <td class="c-sota"><span class="sota-strong">53.9%</span>（2021-12，出处：论文评估表 MCIL 基线 D→D 的 MTLC 单步）；<span class="warn">arXiv:2112.03227 ⚠️待点开确认（CALVIN，原因：版本号未核实）</span></td>
+          </tr>
+          <tr data-cost="mid" data-od-id="row-simplerenv">
+            <th scope="row" class="col-name">SimplerEnv</th>
+            <td class="c-pos">真实策略的 real-to-sim 排名复现，测仿真评估是否保序，不测新策略训练榜首</td>
+            <td class="c-engine">SAPIEN + ManiSkill2 真机映射分支 / Google Robot 与 WidowX</td>
+            <td class="c-scale"><span class="total">两类本体约 10 个任务族 + 约 1500 轮配对评估</span>
+              <ul class="breakdown">
+                <li>Google Robot 6 组（拿可乐罐、拿任意物体、移近、开关抽屉等）</li>
+                <li>WidowX 4 组：勺放毛巾、胡萝卜放盘、叠方块、茄子放入篮</li>
+                <li>子变体：可乐罐横 / 竖 / 立姿、抽屉上 / 中 / 下层等</li>
+                <li>约 1500 轮配对 sim-and-real 评估（RT-1、RT-1-X、RT-2-X、Octo）</li>
+              </ul>
+            </td>
+            <td class="c-metric">成功率 + Pearson 相关 + MMRV（排错的最大真实代价，定义见论文评估节）</td>
+            <td class="c-env"><span class="envline"><span class="env-k">环境</span>SAPIEN + ManiSkill2 真机映射分支（另有 ManiSkill3 GPU 并行分支，快约 10–15 倍）；消费级显卡约 3500 步 / 秒，约为真实 7 倍速</span><span class="envline"><span class="env-k">技术栈</span>main_inference.py 推理主入口 + calc_metrics.py（MMRV / Pearson 复算）+ 新增环境指引 + 交互示例 notebook</span></td>
+            <td class="c-time"><span class="days">8–12 人天</span><span class="days-note">锚定折算·待确认（原成本档：中；视觉匹配调试占大头）</span></td>
+            <td class="c-sota">未公开单一成功率榜首（2026-09-20 整理，出处：论文 Fig.1 强相关结论，仿真与真实配对评估约 1500 轮；各策略分值见分章 03，不转述二手排名）</td>
+          </tr>
+          <tr data-cost="mid" data-od-id="row-robocasa365">
+            <th scope="row" class="col-name">RoboCasa365</th>
+            <td class="c-pos">厨房原子到组合的泛化阶梯，测组合泛化与数据规模效应，不测开放家务全集</td>
+            <td class="c-engine">MuJoCo + robosuite / 移动操作平台</td>
+            <td class="c-scale"><span class="total">365 个任务 + 约 2500 场景 + 超 2000 小时数据</span>
+              <ul class="breakdown">
+                <li>365 = 原子 65 + 组合 300；约 60 类厨房活动、6 个高层活动族；目标评测子集 50（原子 18 + 组合可见 16 + 组合未见 16）</li>
+                <li>约 2500 厨房场景（50 种布局 × 50 种风格）</li>
+                <li>人工约 612 小时（预训练 300 任务 × 100 条约 404 小时 + 目标 50 任务 × 500 条约 208 小时）+ 合成约 1615 小时（60 原子任务 × 1 万条）</li>
+                <li>原版对照：100 任务（原子 25 / 组合 75）、120 场景、2500 余物体 153 类、10 万条以上轨迹</li>
+              </ul>
+            </td>
+            <td class="c-metric">分见与未见组合成功率 + 终身学习阶段成功率（定义见 365 论文评估节）</td>
+            <td class="c-env"><span class="envline"><span class="env-k">环境</span>MuJoCo + robosuite；物理跑 CPU、渲染走 GPU，20Hz，可多异步环境并行；2000 小时级数据需大容量存储</span><span class="envline"><span class="env-k">技术栈</span>robocasa 任务与环境实现包 + 官网文档与排行榜</span></td>
+            <td class="c-time"><span class="days">12–25 人天</span><span class="days-note">锚定折算·待确认（原成本档：中高；不含全量数据下载）</span></td>
+            <td class="c-sota"><span class="sota-strong">平均 22.5%</span>（Atomic-Seen 44.1% / Composite-Seen 9.0% / Composite-Unseen 11.7%）（2026-03，出处：365 论文正文系统评估节）；仿真加真实联合训练 79.8%，纯真实 61.8%（出处同）；原版分数引用 <span class="warn">arXiv:2406.02523 ⚠️待点开确认（RoboCasa 原版，原因：与仓库引用段对应关系未核实）</span></td>
+          </tr>
+          <tr data-cost="mid" data-od-id="row-maniskill">
+            <th scope="row" class="col-name">ManiSkill</th>
+            <td class="c-pos">图形处理器并行的大规模操作基准，测并行吞吐与跨本体泛化，不测家务语义规划</td>
+            <td class="c-engine">SAPIEN 3 + PhysX 并行物理 + Vulkan 并行渲染 / 多形态本体</td>
+            <td class="c-scale"><span class="total">ManiSkill2 约 20 任务族 + ManiSkill3 约 12 类域</span>
+              <ul class="breakdown">
+                <li>MS2：2000 余物体模型、400 万帧以上演示；柔体 6（填充 / 悬挂 / 挖掘 / 倾倒 / 捏塑 / 书写）、装配 3（单孔 / 充电插头 / 套件组装）、取放 5（YCB / EGAD / 杂乱场景）、关节与避障 5（推椅 / 移桶 / 开柜门抽屉 / 转水龙头等）</li>
+                <li>MS3：20 余种机器人本体，数百万帧演示（运动规划 / 强化学习 / 遥操作三轨来源）</li>
+              </ul>
+            </td>
+            <td class="c-metric">success_once / success_at_end / 回报值（定义见论文评估节）</td>
+            <td class="c-env"><span class="envline"><span class="env-k">环境</span>SAPIEN + PhysX GPU 并行仿真 + Vulkan 并行渲染，需 NVIDIA GPU（论文 256 并行约 1 小时训 1500 万样本，RTX 4090 级）</span><span class="envline"><span class="env-k">技术栈</span>mani_skill 环境 / 智能体 / 传感器 / 向量化模块 + 在线文档与演示画廊</span></td>
+            <td class="c-time"><span class="days">8–12 人天</span><span class="days-note">锚定折算·待确认（原成本档：中）</span></td>
+            <td class="c-sota"><span class="sota-strong">91.6%</span>（2024-10，出处：ManiSkill3 论文正文真实评估，22 次成功共 24 次试验平均）；ManiSkill2 分数引用 <span class="warn">arXiv:2302.04659 ⚠️待点开确认（ManiSkill2，原因：版本号未核实）</span>，细项见分章 05</td>
+          </tr>
+          <tr data-cost="high" data-od-id="row-behavior">
+            <th scope="row" class="col-name">BEHAVIOR-1K</th>
+            <td class="c-pos">完整家务活动的符号化定义，测长时程规划与状态变化处理，不测单步抓取榜首</td>
+            <td class="c-engine">Isaac Sim + OmniGibson / 移动双臂平台</td>
+            <td class="c-scale"><span class="total">1000 个活动 + 50 场景 + 9000 余物体</span>
+              <ul class="breakdown">
+                <li>1000 = 问卷排序前 909 + BEHAVIOR-100 的 91；9318 个物体 1900 余类；每活动涉及 3–47 个物体</li>
+                <li>挑战子集约 100 任务与约 2 万条轨迹 <span class="warn">⚠️待核实</span></li>
+                <li>实验抽样 3 活动：CollectTrash（刚体收纳，至少 16 步原语）、StoreDecoration（关节收纳）、CleanTable（擦拭，最优 6 步）</li>
+              </ul>
+            </td>
+            <td class="c-metric">BDDL 谓词满足率 + 效率分（定义见论文评估节）</td>
+            <td class="c-env"><span class="envline"><span class="env-k">环境</span>Isaac Sim + OmniGibson（Omniverse + PhysX 5），光追渲染，需高显存 GPU；约 60 物体住宅场景约 60 帧 / 秒</span><span class="envline"><span class="env-k">技术栈</span>bddl3 符号定义库（活动定义 / 知识库 / 谓词判定）+ OmniGibson 仿真主体 + 官网安装指南</span></td>
+            <td class="c-time"><span class="days">25–50 人天</span><span class="days-note">锚定折算·待确认（原成本档：高；Omniverse 环境最耗时，约 5–10 周单人）</span></td>
+            <td class="c-sota">未公开单一榜首分数（2026-09-20 整理，出处：论文实验节，长时程与复杂操作仍是挑战，基线分散未收敛，细项见分章 06）</td>
+          </tr>
+          <tr data-cost="mid" data-od-id="row-robotwin">
+            <th scope="row" class="col-name">RoboTwin 2.0</th>
+            <td class="c-pos">双臂数字孪生的评测与数据工厂，测双臂协作与视觉指令泛化，不测单臂桌面榜首</td>
+            <td class="c-engine">SAPIEN 3.0 / Aloha、ARX、Franka 等双臂平台</td>
+            <td class="c-scale"><span class="total">50 评测任务 + 731 物体 + 10 万余条轨迹</span>
+              <ul class="breakdown">
+                <li>物体 731 共 147 类：自建 RGB-to-3D 重建 534（111 类）+ Objaverse 153（27 类）+ PartNet-Mobility 关节物体 44（9 类）</li>
+                <li>5 种双臂构型：Aloha-AgileX、ARX-X5、Piper、Franka、UR5</li>
+                <li>五轴域随机（杂物 / 光照 / 背景 / 台面高度 / 语言）；背景纹理库 11000 张</li>
+                <li>真机对照 4 任务（StackBowls、HandoverBlock、PickBottle、ClickBell）× 4 种背景杂物组合</li>
+              </ul>
+            </td>
+            <td class="c-metric">任务成功率 + 视觉与指令泛化剖面（含杂物、光照、背景、台面高度与语言五轴域随机，定义见论文评估节）</td>
+            <td class="c-env"><span class="envline"><span class="env-k">环境</span>SAPIEN 3.0，双臂构型 5 种，30Hz 多视角 RGB-D 同步；真机对照需 COBOT-Magic 双臂平台</span><span class="envline"><span class="env-k">技术栈</span>env_cfg 双臂构型 + envs 仿真实现 + XPolicyLab 评测适配 + HuggingFace 预采集数据 + 完整文档站</span></td>
+            <td class="c-time"><span class="days">10 人天（两周）</span><span class="days-note">你方实测锚点（原成本档：中；纯仿真部分）</span></td>
+            <td class="c-sota"><span class="sota-strong">71.3%</span>（2025-06，出处：论文 Fig.1 自研方法）；代码生成成功率提升 10.9 个百分点（出处：论文摘要与正文）；纯合成零样本相对提升 228%，加 10 条真实演示相对提升 367%（出处同，细项见分章 07）</td>
+          </tr>
+          <tr data-cost="high" data-od-id="row-robodojo">
+            <th scope="row" class="col-name">RoboDojo</th>
+            <td class="c-pos">按能力维度剖分的统一评测，测记忆、精度、长时程等短板定位，不测单一总榜首</td>
+            <td class="c-engine">Isaac Sim 5.1 + IsaacLab 2.3 / 多机器人本体</td>
+            <td class="c-scale"><span class="total">仿真 54 组 + 真机 18 个 + 训练数据约 38 小时</span>
+              <ul class="breakdown">
+                <li>仿真 42 标准 + 12 泛化（各 25 标准轮 + 25 随机轮）；真机 18（3 构型各 6）</li>
+                <li>五维划分：泛化 12、记忆 6、长时程 8、精度 8、开放 8（共 42 任务，24 种操作技能）</li>
+                <li>仿真训练 3500 条（1859802 帧约 20.66 小时）+ 真机 1800 条（1611841 帧约 17.91 小时）；30 余种策略已上报</li>
+              </ul>
+            </td>
+            <td class="c-metric">五维能力成功率：记忆、精度、长时程、开放理解等分维报告（定义见论文第 3 节评估设置）</td>
+            <td class="c-env"><span class="envline"><span class="env-k">环境</span>Isaac Sim 5.1 + IsaacLab 2.3，异构并行 + 多卡分片；真机需 1.5 米见方工位 + 固定臂 / 相机位姿 + LED 线光源</span><span class="envline"><span class="env-k">技术栈</span>XPolicyLab 统一策略接口 + robodojo.sh 评测入口 + YAML 模块化任务配置 + HuggingFace 数据</span></td>
+            <td class="c-time"><span class="days">12–25 人天</span><span class="days-note">锚定折算·待确认（原成本档：高；纯仿真部分，真机工位另计）</span></td>
+            <td class="c-sota">基线平均约 8% 至 13%（2026-07，出处：论文主结果表，如 Hy-Embodied 类基线平均约 13.07% 与 8.80% 双列；各维度细项见分章 08）</td>
+          </tr>
+          <tr data-cost="mid" data-od-id="row-harness">
+            <th scope="row" class="col-name">VLA-Harness</th>
+            <td class="c-pos">一次接入、多处评测的矩阵型框架，测跨模型横评与复现保真，不测单一操作技能榜首</td>
+            <td class="c-engine">WebSocket 加消息打包协议，各榜单容器隔离 / 依所连榜单本体而定</td>
+            <td class="c-scale"><span class="total">约 14 适配器 + 6 模型服务 + 657 条聚合结果</span>
+              <ul class="breakdown">
+                <li>榜单页 657 条结果覆盖 17 榜单（源自 1704 篇引用榜单的论文）</li>
+                <li>复现矩阵：6 个 VLA 代码库 × LIBERO / CALVIN / SimplerEnv 三榜单</li>
+                <li>仓库实测：榜单配置约 20 目录 + 模型服务 10 余目录（多于论文口径，以仓库为准）</li>
+              </ul>
+            </td>
+            <td class="c-metric">分集到任务再到榜单三级聚合 + 复现偏差报告（定义见论文第 2 至 3 节）</td>
+            <td class="c-env"><span class="envline"><span class="env-k">环境</span>榜单侧 Docker 容器隔离（镜像 4.7–35.6GB，动作 6–14 维）；模型侧单文件 uv 脚本（约 50 行 predict 方法）</span><span class="envline"><span class="env-k">技术栈</span>vla-eval serve 起模型服务 + vla-eval run 跑榜单客户端，两份 YAML 驱动，结果落结构化 JSON</span></td>
+            <td class="c-time"><span class="days">8–12 人天</span><span class="days-note">锚定折算·待确认（原成本档：中；先跑通 LIBERO 复现矩阵）</span></td>
+            <td class="c-sota">聚合 657 条结果（2026-03，出处：论文 Fig.1）；复现警示：单个未记录参数可摆动 55 个百分点，如 LIBERO 案例从 97.8% 降至 42%（出处：论文 Sec.III）；并行评估最高约 47 倍加速，如 2000 轮 LIBERO 约 18 分钟（出处：论文摘要与 Fig.1）</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <p class="copy-tip" data-od-id="table-hint">横向可滚动查看全表；首列与表头冻结。点「下载 CSV」可直接用 Excel 打开，「复制 TSV」可粘贴进在线表格。</p>
+
+  <section class="notes" data-od-id="table-notes">
+    <h2>表注（原文照录）</h2>
+    <ol>
+      <li>规模数字以本地仓库 commit 为准，定义以论文为准；每格溯源见行内出处，分章给出仓库相对路径与论文章节号。</li>
+      <li>SOTA 格格式为分数（日期，出处），出处为论文表号、图号或章节，或官方榜单页；未公开格同样给出整理日期与缺口原因，不臆测。</li>
+      <li>不确定编号警示：arXiv:2112.03227 ⚠️待点开确认（CALVIN，原因：版本号未核实）；arXiv:2406.02523 ⚠️待点开确认（RoboCasa 原版，原因：与仓库引用段对应关系未核实）；arXiv:2302.04659 ⚠️待点开确认（ManiSkill2，原因：版本号未核实）。三者凡出现均已标记。</li>
+      <li>一句话定位与选型表述参考教程站总览（https://benchmark.linkseek.net.cn/），事实口径以论文与仓库为准。</li>
+      <li>「预估搭建时间」以 RoboTwin 两周实测（按 10 个工作日计 10 人天）为锚点：RoboTwin 原属「中」档（中点约 4 人天），折算系数约 2.5 倍，其余各档同比例放大——低约 3–8 人天、中约 8–12 人天、中高约 12–25 人天、高约 12–50 人天（含环境复杂度，不含全量数据下载与真机工位搭建）。如两周指 14 天或多人并行，告知换算方式后重调系数。</li>
+    </ol>
+  </section>
+
+</div>
+<script>
+(function(){
+  var q=document.getElementById('q'),
+      count=document.getElementById('count'),
+      rows=Array.prototype.slice.call(document.querySelectorAll('#tbl tbody tr'));
+  function norm(s){return (s||'').toLowerCase();}
+  function apply(){
+    var kw=norm(q.value.trim()),n=0;
+    rows.forEach(function(r){
+      var show=!kw||norm(r.textContent).indexOf(kw)>-1;
+      r.style.display=show?'':'none';
+      if(show)n++;
+    });
+    count.textContent='共 9 行 · 当前显示 '+n+' 行';
+  }
+  q.addEventListener('input',apply);
+  function cellText(td){
+    return td.innerText.replace(/\s+/g,' ').trim();
+  }
+  function toCSV(){
+    var head=['榜单','定位','引擎','规模（任务数/演示数）','指标','环境+技术栈','预估搭建时间','备注（SOTA+日期）'];
+    function esc(s){s=String(s).replace(/"/g,'""');return /[",\n]/.test(s)?'"'+s+'"':s;}
+    var lines=[head.map(esc).join(',')];
+    rows.forEach(function(r){
+      var cells=r.querySelectorAll('th,td');
+      var vals=Array.prototype.map.call(cells,function(td){return esc(cellText(td));});
+      lines.push(vals.join(','));
+    });
+    return '﻿'+lines.join('\r\n');
+  }
+  document.getElementById('dl').addEventListener('click',function(){
+    var blob=new Blob([toCSV()],{type:'text/csv;charset=utf-8'});
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='benchmark横向对照表.csv';
+    document.body.appendChild(a);a.click();
+    setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},500);
+  });
+  document.getElementById('cp').addEventListener('click',function(){
+    var lines=rows.filter(function(r){return r.style.display!=='none';}).map(function(r){
+      var cells=r.querySelectorAll('th,td');
+      return Array.prototype.map.call(cells,function(td){return cellText(td);}).join('\t');
+    });
+    var done=function(){var b=document.getElementById('cp');b.textContent='已复制';setTimeout(function(){b.textContent='复制 TSV';},1500);};
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(lines.join('\n')).then(done,done);
+    }else{
+      var ta=document.createElement('textarea');ta.value=lines.join('\n');
+      document.body.appendChild(ta);ta.select();
+      try{document.execCommand('copy');}catch(e){}
+      ta.remove();done();
+    }
+  });
+})();
+</script>
+</body>
+</html>
